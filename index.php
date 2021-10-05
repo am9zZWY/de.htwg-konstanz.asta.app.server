@@ -1,11 +1,22 @@
 <?php
 
+// Allow from any origin
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 86400');
+}
+
+function fetch_and_create_dom($url) {
+    $doc = new DOMDocument();
+    $html = file_get_contents($url);
+    $doc->loadHTML($html);
+    return new DOMXPath($doc);
+}
+
 function get_speiseplan()
 {
-    $doc = new DOMDocument();
-    $html = file_get_contents('https://seezeit.com/essen/speiseplaene/mensa-htwg/');
-    $doc->loadHTML($html);
-    $xpath = new DOMXPath($doc);
+    $xpath = fetch_and_create_dom('https://seezeit.com/essen/speiseplaene/mensa-htwg/');
 
     $activeday_el = $xpath->query('//div[contains(@class, "contents_aktiv")]')[0];
 
