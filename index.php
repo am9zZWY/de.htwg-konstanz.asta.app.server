@@ -1,12 +1,5 @@
 <?php
 
-// Allow from any origin
-if (isset($_SERVER['HTTP_ORIGIN'])) {
-    header("Access-Control-Allow-Origin: {$_SERVER['HTTP_ORIGIN']}");
-    header('Access-Control-Allow-Credentials: true');
-    header('Access-Control-Max-Age: 86400');
-}
-
 function fetch_and_create_dom($url) {
     $doc = new DOMDocument();
     $html = file_get_contents($url);
@@ -44,5 +37,10 @@ function get_speiseplan()
     header('Content-type:application/json;charset=utf-8');
     echo json_encode($speiseplan);
 }
+
+header("Access-Control-Allow-Origin: *");
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Max-Age: 86400');
+
 get_speiseplan();
 ?>
