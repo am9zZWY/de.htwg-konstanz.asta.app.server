@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Fetch a html from url and return an DOMXPath Object of it.
+ * Fetch an HTML from URL and return an DOMXPath Object of it.
  * @param $url
  * @return DOMXPath
  */
@@ -12,7 +12,7 @@ function fetch_and_create_dom($url)
 }
 
 /**
- * Return an DOMXPath Object from a simple html.
+ * Return an DOMXPath Object from a simple HTML.
  * @param $html
  * @return DOMXPath
  */
@@ -30,9 +30,10 @@ function clean_string($string)
 }
 
 /**
- * Get information about the Druckerkonto of the HTWG Konstanz.
+ * Get information about the Druckerkonto from HTWG.
  * @param $username
  * @param $password
+ * @return string
  */
 function get_druckerkonto($username, $password)
 {
@@ -111,6 +112,18 @@ function get_speiseplan()
     return json_encode($speiseplan);
 }
 
+/**
+ * Get HTML of Termine und Fristen from HTWG.
+ * @return string
+ */
+function get_termine()
+{
+    $xpath = fetch_and_create_dom('https://www.htwg-konstanz.de/studium/pruefungsangelegenheiten/terminefristen/');
+    $termine = $xpath->query('.//h2')[0]->parentNode;
+    return $termine->ownerDocument->saveHTML($termine);
+}
+
+
 /* Set return-headers to enable CORS policy */
 header("Access-Control-Allow-Origin: *");
 header('Access-Control-Allow-Credentials: true');
@@ -127,6 +140,8 @@ if (isset($json)) {
     }
 } else if (isset($_GET['mensa']) || isset($_GET['speiseplan'])) {
     echo get_speiseplan();
+} else if (isset($_GET['termine']) || isset($_GET['fristen'])) {
+    echo get_termine();
 } else {
     echo 'Moin.';
 }
