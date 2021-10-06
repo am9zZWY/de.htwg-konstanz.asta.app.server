@@ -23,6 +23,12 @@ function create_domxpath($html)
     return new DOMXPath($doc);
 }
 
+function clean_string($string)
+{
+    $cleaned_string = htmlspecialchars($string, ENT_QUOTES);
+    return $cleaned_string;
+}
+
 /**
  * Get information about the Druckerkonto of the HTWG Konstanz.
  * @param $username
@@ -68,7 +74,7 @@ function get_druckerkonto($username, $password)
     $matches = array();
     preg_match('(\d+,\d+)', $result_druckerkonto, $matches);
 
-    echo $matches[0];
+    return $matches[0];
 }
 
 /**
@@ -102,7 +108,7 @@ function get_speiseplan()
     }
 
     header('Content-type:application/json;charset=utf-8');
-    echo json_encode($speiseplan);
+    return json_encode($speiseplan);
 }
 
 /* Set return-headers to enable CORS policy */
@@ -110,10 +116,17 @@ header("Access-Control-Allow-Origin: *");
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Max-Age: 86400');
 
+/* Get POST body */
+$post_body = file_get_contents('php://input');
+$json = json_decode($post_body, true);
 
 /* Handle GET requests */
-if (isset($_GET['drucker'])) {
-    echo get_druckerkonto($_GET['username'], $_GET['password']);
+if (isset($json)) {
+    if (isset($json['reqtype']) && clean_string($json['reqtype']) == 'drucker') {
+        echo get_druckerkonto(clean_string($json['username']), clean_string($json['password']));
+    }
 } else if (isset($_GET['mensa']) || isset($_GET['speiseplan'])) {
     echo get_speiseplan();
+} else {
+    echo 'Moin.';
 }
