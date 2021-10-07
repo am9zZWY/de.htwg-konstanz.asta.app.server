@@ -29,6 +29,22 @@ function clean_string($string)
     return $cleaned_string;
 }
 
+
+function get_cookies($result) {
+    preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches); /* Retrieve cookies and save them to an array */
+    $cookies = array();
+    foreach ($matches[1] as $item) {
+        parse_str($item, $cookie);
+        $cookies = array_merge($cookies, $cookie);
+    }
+    return $cookies;
+}
+
+function get_cookies_raw($result) {
+    preg_match('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
+    return $matches[1];
+}
+
 /**
  * Get information about the Druckerkonto from HTWG.
  * @param $username
@@ -55,12 +71,7 @@ function get_druckerkonto($username, $password)
     curl_setopt($curl_post_login, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
     $result_login = curl_exec($curl_post_login);
 
-    preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result_login, $matches); /* Retrieve cookies and save them to an array */
-    $cookies = array();
-    foreach ($matches[1] as $item) {
-        parse_str($item, $cookie);
-        $cookies = array_merge($cookies, $cookie);
-    }
+    $cookies = get_cookies($result_login);
 
     /**
      * Get prepared page from server.
@@ -112,6 +123,67 @@ function get_speiseplan()
     return json_encode($speiseplan);
 }
 
+function get_noten($username, $password)
+{
+    /* Fields for POST request */
+    $fields = [
+        'username' => 'jo391mue',
+        'password' => 'Therapper5021',
+        'submit' => 'Anmeldung'
+    ];
+
+    $header_login = array(
+        'Content-Type: application/x-www-form-urlencoded',
+        'Host: qisserver.htwg-konstanz.de'
+    );
+
+    /**
+     * Initial POST request to prepare for log in.
+     * The server then sends back identification cookies which should be used to get the page.
+     */
+    $curl_post_prepare = curl_init('https://qisserver.htwg-konstanz.de/qisserver/rds?state=user&type=1&category=auth.login&startpage=portal.vm');
+    curl_setopt($curl_post_prepare, CURLOPT_POST, true);
+    curl_setopt($curl_post_prepare, CURLOPT_POSTFIELDS, http_build_query($fields));
+    curl_setopt($curl_post_prepare, CURLOPT_HEADER, true); /* Enable Cookies */
+    curl_setopt($curl_post_prepare, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
+    curl_setopt($curl_post_prepare, CURLOPT_HTTPHEADER, $header_login);
+
+    $result_post_prepare = curl_exec($curl_post_prepare);
+    $cookies = get_cookies_raw($result_post_prepare); /* Need raw cookies */
+
+
+
+    $header_noten = array(
+        'Host: qisserver.htwg-konstanz.de',
+        'Connection: keep-alive',
+        'Cookie: ' . $cookies,
+    );
+
+    /**
+     * Login.
+     */
+    $curl_get_login = curl_init('https://qisserver.htwg-konstanz.de/qisserver/rds?state=user&type=0&category=menu.browse&breadCrumbSource=&startpage=portal.vm&chco=y');
+    curl_setopt($curl_get_login, CURLOPT_HEADER, true);
+    curl_setopt($curl_get_login, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl_get_login, CURLOPT_HTTPHEADER, $header_noten);
+    $result_login = curl_exec($curl_get_login);
+
+
+    $header_noten = array(
+        'Host: qisserver.htwg-konstanz.de',
+        'Connection: keep-alive',
+        'Cookie: ' . $cookies,
+    );
+
+    $curl_get_pruefungsverwaltung = curl_init('https://qisserver.htwg-konstanz.de/qisserver/rds?state=change&type=1&moduleParameter=studyPOSMenu&nextdir=change&next=menu.vm&subdir=applications&xml=menu&purge=y&navigationPosition=functions%2CstudyPOSMenu&breadcrumb=studyPOSMenu&topitem=loggedin&subitem=studyPOSMenu');
+    curl_setopt($curl_get_pruefungsverwaltung, CURLOPT_HEADER, true);
+    curl_setopt($curl_get_pruefungsverwaltung, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl_get_pruefungsverwaltung, CURLOPT_HTTPHEADER, $header_noten);
+    $result_get_pruefungsverwaltung = curl_exec($curl_get_pruefungsverwaltung);
+
+    return $result_get_pruefungsverwaltung;
+}
+
 /**
  * Get HTML of Termine und Fristen from HTWG.
  * @return string
@@ -135,8 +207,15 @@ $json = json_decode($post_body, true);
 
 /* Handle GET requests */
 if (isset($json)) {
-    if (isset($json['reqtype']) && clean_string($json['reqtype']) == 'drucker') {
-        echo get_druckerkonto(clean_string($json['username']), clean_string($json['password']));
+    if (isset($json['reqtype'])) {
+        $username = clean_string($json['username']);
+        $password = clean_string($json['password']);
+
+        if (clean_string($json['reqtype']) == 'drucker') {
+            echo get_druckerkonto($username, $password);
+        } elseif (clean_string($json['reqtype']) == 'noten') {
+            echo get_noten($username, $password);
+        }
     }
 } else if (isset($_GET['mensa']) || isset($_GET['speiseplan'])) {
     echo get_speiseplan();
