@@ -123,12 +123,18 @@ function get_speiseplan()
     return json_encode($speiseplan);
 }
 
+/**
+ * Get grades from HTWG.
+ * @param $username
+ * @param $password
+ * @return string
+ */
 function get_noten($username, $password)
 {
     /* Fields for POST request */
     $fields = [
-        'username' => 'jo391mue',
-        'password' => 'Therapper5021',
+        'username' => $username,
+        'password' => $password,
         'submit' => 'Anmeldung'
     ];
 
@@ -169,19 +175,54 @@ function get_noten($username, $password)
     $result_login = curl_exec($curl_get_login);
 
 
-    $header_noten = array(
-        'Host: qisserver.htwg-konstanz.de',
-        'Connection: keep-alive',
-        'Cookie: ' . $cookies,
-    );
-
+    /**
+     * Prüfungsverwaltung.
+     */
     $curl_get_pruefungsverwaltung = curl_init('https://qisserver.htwg-konstanz.de/qisserver/rds?state=change&type=1&moduleParameter=studyPOSMenu&nextdir=change&next=menu.vm&subdir=applications&xml=menu&purge=y&navigationPosition=functions%2CstudyPOSMenu&breadcrumb=studyPOSMenu&topitem=loggedin&subitem=studyPOSMenu');
     curl_setopt($curl_get_pruefungsverwaltung, CURLOPT_HEADER, true);
     curl_setopt($curl_get_pruefungsverwaltung, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl_get_pruefungsverwaltung, CURLOPT_HTTPHEADER, $header_noten);
     $result_get_pruefungsverwaltung = curl_exec($curl_get_pruefungsverwaltung);
 
-    return $result_get_pruefungsverwaltung;
+    /**
+     * Path for Notenspiegel über alle bestandenen Prüfungsleistungen
+     */
+    $xpath = create_domxpath($result_get_pruefungsverwaltung);
+    $notenspiegel_path = $xpath->query('.//a[contains(text(), "Notenspiegel über alle bestandenen Leistungen")]/@href')[0];
+
+    /**
+     * Notenspiegel über alle bestandenen Prüfungsleistungen.
+     */
+    $curl_get_notenspiegel = curl_init($notenspiegel_path->nodeValue);
+    curl_setopt($curl_get_notenspiegel, CURLOPT_HEADER, true);
+    curl_setopt($curl_get_notenspiegel, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl_get_notenspiegel, CURLOPT_HTTPHEADER, $header_noten);
+    $result_get_notenspiegel = curl_exec($curl_get_notenspiegel);
+
+    /**
+     * Parse Notenspiegel.
+     */
+    $xpath = create_domxpath($result_get_notenspiegel);
+
+    /* Get all grades */
+    $grades = $xpath->query('.//span[text()="Prüfungsnummer"]/ancestor::tr/following-sibling::tr');
+
+    $grades_obj = [];
+
+    foreach ($grades as $grade) {
+        $grade_tds = $xpath->query('.//td[@class="tabelle1"]', $grade);
+        $grade_obj = new stdClass();
+        $grade_obj->number = $grade_tds[0]->nodeValue;
+        $grade_obj->name = $grade_tds[1]->nodeValue;
+        $grade_obj->semester = $grade_tds[2]->nodeValue;
+        $grade_obj->grade = $grade_tds[3]->nodeValue;
+        $grade_obj->ects = $grade_tds[4]->nodeValue;
+        $grade_obj->status = $grade_tds[5]->nodeValue;
+        array_push($grades_obj, $grade_obj);
+    }
+
+    header('Content-type:application/json;charset=utf-8');
+    return json_encode($grades_obj);
 }
 
 /**
