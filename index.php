@@ -1,4 +1,26 @@
 <?php
+require __DIR__ . '/vendor/autoload.php';
+
+// used to load private key from .env file
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
+
+/**
+ * Decrypts message via the 4096 bit long key.
+ *
+ * @param $encrypted_message
+ * @return string | bool
+ */
+function decrypt_message($encrypted_message)
+{
+    $private_key = $_ENV['PRIV_KEY'];
+    openssl_private_decrypt(
+        base64_decode($encrypted_message),
+        $decrypted_data,
+        $private_key
+    );
+    return $decrypted_data;
+}
 
 /**
  * Fetch an HTML from URL and return an DOMXPath Object of it.
@@ -30,7 +52,8 @@ function clean_string($string)
 }
 
 
-function get_cookies($result) {
+function get_cookies($result)
+{
     preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches); /* Retrieve cookies and save them to an array */
     $cookies = array();
     foreach ($matches[1] as $item) {
@@ -40,7 +63,8 @@ function get_cookies($result) {
     return $cookies;
 }
 
-function get_cookies_raw($result) {
+function get_cookies_raw($result)
+{
     preg_match('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
     return $matches[1];
 }
@@ -158,7 +182,6 @@ function get_noten($username, $password)
     $cookies = get_cookies_raw($result_post_prepare); /* Need raw cookies */
 
 
-
     $header_noten = array(
         'Host: qisserver.htwg-konstanz.de',
         'Connection: keep-alive',
@@ -226,6 +249,58 @@ function get_noten($username, $password)
 }
 
 /**
+ * Get stundenplan from HTWG.
+ * @param $username
+ * @param $password
+ * @return string
+ */
+function get_stundenplan($username, $password)
+{
+    /* Fields for POST request */
+    $fields = [
+        'username' => $username,
+        'password' => $password,
+        'submit' => 'Anmeldung'
+    ];
+
+    $header_login = array(
+        'Content-Type: application/x-www-form-urlencoded',
+        'Host: lsf.htwg-konstanz.de'
+    );
+
+    /**
+     * Initial POST request to prepare for log in.
+     * The server then sends back identification cookies which should be used to get the page.
+     */
+    $curl_post_prepare = curl_init('https://lsf.htwg-konstanz.de/qisserver/rds?state=user&type=1&category=auth.login&startpage=portal.vm&breadCrumbSource=portal');
+    curl_setopt($curl_post_prepare, CURLOPT_POST, true);
+    curl_setopt($curl_post_prepare, CURLOPT_POSTFIELDS, http_build_query($fields));
+    curl_setopt($curl_post_prepare, CURLOPT_HEADER, true); /* Enable Cookies */
+    curl_setopt($curl_post_prepare, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
+    curl_setopt($curl_post_prepare, CURLOPT_HTTPHEADER, $header_login);
+
+    $result_post_prepare = curl_exec($curl_post_prepare);
+    $cookies = get_cookies_raw($result_post_prepare); /* Need raw cookies */
+
+    $header_noten = array(
+        'Host: lsf.htwg-konstanz.de',
+        'Connection: keep-alive',
+        'Cookie: ' . $cookies,
+    );
+
+    /**
+     * Login.
+     */
+    $curl_get_login = curl_init('https://lsf.htwg-konstanz.de/qisserver/rds?state=user&type=0&category=menu.browse&breadCrumbSource=portal&startpage=portal.vm&chco=y');
+    curl_setopt($curl_get_login, CURLOPT_HEADER, true);
+    curl_setopt($curl_get_login, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl_get_login, CURLOPT_HTTPHEADER, $header_noten);
+    $result_login = curl_exec($curl_get_login);
+
+    return $result_login;
+}
+
+/**
  * Get HTML of Termine und Fristen from HTWG.
  * @return string
  */
@@ -249,19 +324,30 @@ $json = json_decode($post_body, true);
 /* Handle GET requests */
 if (isset($json)) {
     if (isset($json['reqtype'])) {
-        $username = clean_string($json['username']);
-        $password = clean_string($json['password']);
+        $username = decrypt_message($json['username']);
+        $password = decrypt_message($json['password']);
 
-        if (clean_string($json['reqtype']) == 'drucker') {
-            echo get_druckerkonto($username, $password);
-        } elseif (clean_string($json['reqtype']) == 'noten') {
-            echo get_noten($username, $password);
+        if ($username && $password) {
+            http_response_code(200);
+            if (clean_string($json['reqtype']) == 'drucker') {
+                echo get_druckerkonto($username, $password);
+            } elseif (clean_string($json['reqtype']) == 'noten') {
+                echo get_noten($username, $password);
+            } elseif (clean_string($json['reqtype']) == 'stundenplan') {
+                echo get_stundenplan($username, $password);
+            }
+        } else {
+            http_response_code(403);
+            echo 'Password oder Benutzername können nicht entschlüsselt werden.';
         }
     }
 } else if (isset($_GET['mensa']) || isset($_GET['speiseplan'])) {
+    http_response_code(200);
     echo get_speiseplan();
 } else if (isset($_GET['termine']) || isset($_GET['fristen'])) {
+    http_response_code(200);
     echo get_termine();
 } else {
+    http_response_code(204);
     echo 'Moin.';
 }
