@@ -114,9 +114,10 @@ function get_druckerkonto($username, $password)
 }
 
 /**
+ * @deprecated
  * Get the newest meals of the HTWG Mensa.
  */
-function get_speiseplan()
+function get_speiseplan_old()
 {
     $xpath = fetch_and_create_dom('https://seezeit.com/essen/speiseplaene/mensa-htwg/');
 
@@ -141,6 +142,37 @@ function get_speiseplan()
             }
             $node = $node->nextSibling;
         }
+    }
+
+    header('Content-type:application/json;charset=utf-8');
+    return json_encode($speiseplan);
+}
+
+/**
+ * Get the newest meals of the HTWG Mensa.
+ */
+function get_speiseplan()
+{
+    $speiseplan_xml = file_get_contents('https://www.max-manager.de/daten-extern/seezeit/xml/mensa_htwg/speiseplan.xml');
+    $xml = simplexml_load_string($speiseplan_xml);
+
+    $speiseplan = new stdClass();
+    foreach ($xml->tag as $tag) {
+        $day = new stdClass();
+        $timestamp = (string) $tag->attributes()->timestamp;
+
+        $items = $tag->item;
+        $cleaned_items = [];
+        foreach ($items as $item) {
+            $food = new stdClass();
+            $food->category = (string) $item->category;
+            $food->title = (string) $item->title;
+            $food->price = [(string) $item->preis1, (string) $item->preis2, (string) $item->preis3, (string) $item->preis4];
+            array_push($cleaned_items, $food);
+        }
+        $day->items = $cleaned_items;
+
+        $speiseplan->$timestamp = $day;
     }
 
     header('Content-type:application/json;charset=utf-8');
@@ -341,7 +373,10 @@ if (isset($json)) {
             echo 'Password oder Benutzername können nicht entschlüsselt werden.';
         }
     }
-} else if (isset($_GET['mensa']) || isset($_GET['speiseplan'])) {
+} else if (isset($_GET['mensa_old'])) {
+    http_response_code(200);
+    echo get_speiseplan_old();
+} else if (isset($_GET['mensa'])) {
     http_response_code(200);
     echo get_speiseplan();
 } else if (isset($_GET['termine']) || isset($_GET['fristen'])) {

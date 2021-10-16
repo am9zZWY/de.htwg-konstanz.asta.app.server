@@ -1,5 +1,9 @@
 {
-    "require": {
-        "vlucas/phpdotenv": "^5.3"
-    }
+  "require": {
+    "vlucas/phpdotenv": "^5.3",
+    "ext-simplexml": "*",
+    "ext-openssl": "*",
+    "ext-dom": "*",
+    "ext-curl": "*"
+  }
 }
