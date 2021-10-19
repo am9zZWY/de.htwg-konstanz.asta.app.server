@@ -54,7 +54,7 @@ function get_druckerkonto($username, $password): string
     curl_setopt($curl_post_login, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
     $result_login = curl_exec($curl_post_login);
 
-    $cookies = get_cookies($result_login, true);
+    $cookies = get_cookies($result_login);
 
     /**
      * Get prepared page from server.
@@ -270,6 +270,11 @@ function get_termine(): string
     return $termine->ownerDocument->saveHTML($termine);
 }
 
+function get_veranstaltungen(): string
+{
+    return '';
+}
+
 /**
  * Get prices and opening times of Café Endlicht.
  * @param $param
@@ -340,6 +345,8 @@ if (isset($json)) {
     send('get_speiseplan');
 } else if (isset($_GET['termine'])) {
     send('get_termine');
+} else if (isset($_GET['veranstaltungen'])) {
+    send('get_veranstaltungen');
 } else if (isset($_GET['endlicht'], $_GET['reqtype']) && ($_GET['reqtype'] === 'preise' || $_GET['reqtype'] === 'zeiten')) {
     send('get_endlicht', [clean_string($_GET['reqtype'])]);
 } else {
