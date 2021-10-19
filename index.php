@@ -1,5 +1,9 @@
 <?php
 require __DIR__ . '/vendor/autoload.php';
+include 'helpers.php';
+
+// CONSTANTS
+const CONTENT_JSON = 'Content-type:application/json;charset=utf-8';
 
 // used to load private key from .env file
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -9,9 +13,9 @@ $dotenv->safeLoad();
  * Decrypts message via the 4096 bit long key.
  *
  * @param $encrypted_message
- * @return string | bool
+ * @return string | null
  */
-function decrypt_message($encrypted_message)
+function decrypt_message($encrypted_message): null|string
 {
     $private_key = $_ENV['PRIV_KEY'];
     openssl_private_decrypt(
@@ -22,60 +26,15 @@ function decrypt_message($encrypted_message)
     return $decrypted_data;
 }
 
-/**
- * Fetch an HTML from URL and return an DOMXPath Object of it.
- * @param $url
- * @return DOMXPath
- */
-function fetch_and_create_dom($url)
-{
-    $html = file_get_contents($url);
-    return create_domxpath($html);
-}
 
 /**
- * Return an DOMXPath Object from a simple HTML.
- * @param $html
- * @return DOMXPath
- */
-function create_domxpath($html)
-{
-    $doc = new DOMDocument();
-    $doc->loadHTML($html);
-    return new DOMXPath($doc);
-}
-
-function clean_string($string)
-{
-    $cleaned_string = htmlspecialchars($string, ENT_QUOTES);
-    return $cleaned_string;
-}
-
-
-function get_cookies($result)
-{
-    preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches); /* Retrieve cookies and save them to an array */
-    $cookies = array();
-    foreach ($matches[1] as $item) {
-        parse_str($item, $cookie);
-        $cookies = array_merge($cookies, $cookie);
-    }
-    return $cookies;
-}
-
-function get_cookies_raw($result)
-{
-    preg_match('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
-    return $matches[1];
-}
-
-/**
- * Get information about the Druckerkonto from HTWG.
+ * Get information about the Printer Account from HTWG.
  * @param $username
  * @param $password
  * @return string
+ * @throws JsonException
  */
-function get_druckerkonto($username, $password)
+function get_druckerkonto($username, $password): string
 {
     /* Fields for POST request */
     $fields = [
@@ -95,14 +54,14 @@ function get_druckerkonto($username, $password)
     curl_setopt($curl_post_login, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
     $result_login = curl_exec($curl_post_login);
 
-    $cookies = get_cookies($result_login);
+    $cookies = get_cookies($result_login, true);
 
     /**
      * Get prepared page from server.
      * Cookies are needed to authenticate.
      */
     $curl_get_druckerkonto = curl_init('https://login.rz.htwg-konstanz.de/userprintacc.spy?activeMenu=Druckerkonto');
-    curl_setopt($curl_get_druckerkonto, CURLOPT_HTTPHEADER, array('Cookie: ' . json_encode($cookies)));
+    curl_setopt($curl_get_druckerkonto, CURLOPT_HTTPHEADER, array(create_cookie($cookies)));
     curl_setopt($curl_get_druckerkonto, CURLOPT_RETURNTRANSFER, true);
     $result_druckerkonto = curl_exec($curl_get_druckerkonto);
 
@@ -114,44 +73,10 @@ function get_druckerkonto($username, $password)
 }
 
 /**
- * @deprecated
- * Get the newest meals of the HTWG Mensa.
+ * Get the newest meals of the HTWG Canteen.
+ * @throws JsonException
  */
-function get_speiseplan_old()
-{
-    $xpath = fetch_and_create_dom('https://seezeit.com/essen/speiseplaene/mensa-htwg/');
-
-    $activeday_el = $xpath->query('//div[contains(@class, "contents_aktiv")]')[0];
-
-    $speiseplan = [];
-
-    if (!is_null($activeday_el)) {
-        $node = $activeday_el->firstChild;
-        while ($node !== null) {
-
-            $category = $xpath->query('.//div[@class="category"]', $node)[0];
-            $title = $xpath->query('.//div[@class="title"]', $node)[0];
-            $price = $xpath->query('.//div[@class="preise"]', $node)[0];
-
-            if ($category !== null && $title !== null && $price !== null) {
-                $food = new stdClass();
-                $food->category = $category->nodeValue;
-                $food->title = $title->nodeValue;
-                $food->price = $price->nodeValue;
-                array_push($speiseplan, $food);
-            }
-            $node = $node->nextSibling;
-        }
-    }
-
-    header('Content-type:application/json;charset=utf-8');
-    return json_encode($speiseplan);
-}
-
-/**
- * Get the newest meals of the HTWG Mensa.
- */
-function get_speiseplan()
+function get_speiseplan(): bool|string
 {
     $speiseplan_xml = file_get_contents('https://www.max-manager.de/daten-extern/seezeit/xml/mensa_htwg/speiseplan.xml');
     $xml = simplexml_load_string($speiseplan_xml);
@@ -159,33 +84,34 @@ function get_speiseplan()
     $speiseplan = new stdClass();
     foreach ($xml->tag as $tag) {
         $day = new stdClass();
-        $timestamp = (string) $tag->attributes()->timestamp;
+        $timestamp = (string)$tag->attributes()->timestamp;
 
         $items = $tag->item;
         $cleaned_items = [];
         foreach ($items as $item) {
             $food = new stdClass();
-            $food->category = (string) $item->category;
-            $food->title = (string) $item->title;
-            $food->price = [(string) $item->preis1, (string) $item->preis2, (string) $item->preis3, (string) $item->preis4];
-            array_push($cleaned_items, $food);
+            $food->category = (string)$item->category;
+            $food->title = (string)$item->title;
+            $food->price = [(string)$item->preis1, (string)$item->preis2, (string)$item->preis3, (string)$item->preis4];
+            $cleaned_items[] = $food;
         }
         $day->items = $cleaned_items;
 
         $speiseplan->$timestamp = $day;
     }
 
-    header('Content-type:application/json;charset=utf-8');
-    return json_encode($speiseplan);
+    header(CONTENT_JSON);
+    return json_encode($speiseplan, JSON_THROW_ON_ERROR);
 }
 
 /**
- * Get grades from HTWG.
+ * Get grades from QIS.
  * @param $username
  * @param $password
  * @return string
+ * @throws JsonException
  */
-function get_noten($username, $password)
+function get_noten($username, $password): string
 {
     /* Fields for POST request */
     $fields = [
@@ -217,7 +143,7 @@ function get_noten($username, $password)
     $header_noten = array(
         'Host: qisserver.htwg-konstanz.de',
         'Connection: keep-alive',
-        'Cookie: ' . $cookies,
+        create_cookie($cookies)
     );
 
     /**
@@ -227,7 +153,7 @@ function get_noten($username, $password)
     curl_setopt($curl_get_login, CURLOPT_HEADER, true);
     curl_setopt($curl_get_login, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl_get_login, CURLOPT_HTTPHEADER, $header_noten);
-    $result_login = curl_exec($curl_get_login);
+    curl_exec($curl_get_login);
 
 
     /**
@@ -273,20 +199,20 @@ function get_noten($username, $password)
         $grade_obj->grade = $grade_tds[3]->nodeValue;
         $grade_obj->ects = $grade_tds[4]->nodeValue;
         $grade_obj->status = $grade_tds[5]->nodeValue;
-        array_push($grades_obj, $grade_obj);
+        $grades_obj[] = $grade_obj;
     }
 
-    header('Content-type:application/json;charset=utf-8');
-    return json_encode($grades_obj);
+    header(CONTENT_JSON);
+    return json_encode($grades_obj, JSON_THROW_ON_ERROR);
 }
 
 /**
- * Get stundenplan from HTWG.
+ * Get timetable from LSF.
  * @param $username
  * @param $password
  * @return string
  */
-function get_stundenplan($username, $password)
+function get_stundenplan($username, $password): string
 {
     /* Fields for POST request */
     $fields = [
@@ -317,7 +243,7 @@ function get_stundenplan($username, $password)
     $header_noten = array(
         'Host: lsf.htwg-konstanz.de',
         'Connection: keep-alive',
-        'Cookie: ' . $cookies,
+        create_cookie($cookies),
     );
 
     /**
@@ -329,18 +255,50 @@ function get_stundenplan($username, $password)
     curl_setopt($curl_get_login, CURLOPT_HTTPHEADER, $header_noten);
     $result_login = curl_exec($curl_get_login);
 
+    header(CONTENT_JSON);
     return $result_login;
 }
 
 /**
- * Get HTML of Termine und Fristen from HTWG.
+ * Get HTML of "Termine und Fristen" from HTWG.
  * @return string
  */
-function get_termine()
+function get_termine(): string
 {
     $xpath = fetch_and_create_dom('https://www.htwg-konstanz.de/studium/pruefungsangelegenheiten/terminefristen/');
     $termine = $xpath->query('.//h2')[0]->parentNode;
     return $termine->ownerDocument->saveHTML($termine);
+}
+
+/**
+ * Get prices and opening times of Café Endlicht.
+ * @param $param
+ * @return string|bool
+ * @throws JsonException
+ */
+function get_endlicht($param): string|bool
+{
+    $xpath = fetch_and_create_dom('https://www.htwg-konstanz.de/%20/hochschule/einrichtungen/asta/cafe-endlicht/');
+    if ($param === 'zeiten') {
+        $endlicht_zeiten = $xpath->query('.//*[contains(text(), "Öffnungszeiten")]')[0];
+        return $endlicht_zeiten->ownerDocument->saveHTML($endlicht_zeiten);
+    }
+
+    if ($param === 'preise') {
+        $endlicht_preise = $xpath->query('.//*[contains(text(), "€")]/parent::ul/li/text()');
+        $preise = [];
+        foreach ($endlicht_preise as $endlicht_preis) {
+            $item = new stdClass();
+            $parsed_string = explode(':', $endlicht_preis->textContent);
+            $item->name = trim($parsed_string[0]);
+            $item->price = trim($parsed_string[1]);
+            $preise[] = $item;
+        }
+        header('Content-type:application/json;charset=utf-8');
+        return json_encode($preise, JSON_THROW_ON_ERROR);
+    }
+
+    return false;
 }
 
 
@@ -351,38 +309,40 @@ header('Access-Control-Max-Age: 86400');
 
 /* Get POST body */
 $post_body = file_get_contents('php://input');
-$json = json_decode($post_body, true);
+try {
+    $json = json_decode($post_body, true, 512, JSON_THROW_ON_ERROR);
+} catch (JsonException $e) {
+    $json = null;
+}
 
-/* Handle GET requests */
+/* Handle requests */
 if (isset($json)) {
+    /* POST */
     if (isset($json['reqtype'])) {
         $username = decrypt_message($json['username']);
         $password = decrypt_message($json['password']);
 
         if ($username && $password) {
-            http_response_code(200);
-            if (clean_string($json['reqtype']) == 'drucker') {
-                echo get_druckerkonto($username, $password);
-            } elseif (clean_string($json['reqtype']) == 'noten') {
-                echo get_noten($username, $password);
-            } elseif (clean_string($json['reqtype']) == 'stundenplan') {
-                echo get_stundenplan($username, $password);
+            if (clean_string($json['reqtype']) === 'drucker') {
+                send('get_druckerkonto', [$username, $password]);
+            } elseif (clean_string($json['reqtype']) === 'noten') {
+                send('get_noten', [$username, $password]);
+            } elseif (clean_string($json['reqtype']) === 'stundenplan') {
+                send('get_stundenplan', [$username, $password]);
             }
         } else {
             http_response_code(403);
             echo 'Password oder Benutzername können nicht entschlüsselt werden.';
         }
     }
-} else if (isset($_GET['mensa_old'])) {
-    http_response_code(200);
-    echo get_speiseplan_old();
+    /* GET */
 } else if (isset($_GET['mensa'])) {
-    http_response_code(200);
-    echo get_speiseplan();
-} else if (isset($_GET['termine']) || isset($_GET['fristen'])) {
-    http_response_code(200);
-    echo get_termine();
+    send('get_speiseplan');
+} else if (isset($_GET['termine'])) {
+    send('get_termine');
+} else if (isset($_GET['endlicht'], $_GET['reqtype']) && ($_GET['reqtype'] === 'preise' || $_GET['reqtype'] === 'zeiten')) {
+    send('get_endlicht', [clean_string($_GET['reqtype'])]);
 } else {
-    http_response_code(204);
-    echo 'Moin.';
+    http_response_code(400);
+    echo 'Bad Request';
 }
