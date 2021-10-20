@@ -192,6 +192,12 @@ function get_noten($username, $password): string
 
     foreach ($grades as $grade) {
         $grade_tds = $xpath->query('.//td[@class="tabelle1"]', $grade);
+
+        /* Skip the pseudo-grade 'Vorläuf. Notendurschnitt' if it exists. */
+        if ($grade_tds[0]->nodeValue == '80000') {
+            continue;
+        }
+
         $grade_obj = new stdClass();
         $grade_obj->number = $grade_tds[0]->nodeValue;
         $grade_obj->name = $grade_tds[1]->nodeValue;
