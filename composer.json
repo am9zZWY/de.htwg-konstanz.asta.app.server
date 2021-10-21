@@ -1,6 +1,7 @@
 {
   "name": "htwg-app/htwg-app-back",
   "description": "Backend for the HTWG App",
+  "license": "MIT",
   "scripts": {
     "lint": "phpstan analyse -c phpstan.neon"
   },
