@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "lint": "phpstan analyse --level=6 *.php"
+    "lint": "phpstan analyse -c phpstan.neon"
   },
   "require": {
     "vlucas/phpdotenv": "^5.3",
@@ -10,6 +10,7 @@
     "ext-curl": "*"
   },
   "require-dev": {
+    "roave/security-advisories": "dev-latest",
     "phpstan/phpstan": "^0.12.99"
   }
 }
