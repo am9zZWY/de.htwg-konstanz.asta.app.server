@@ -1,5 +1,5 @@
 {
-  "name": "htwg-app-back",
+  "name": "htwg-app/htwg-app-back",
   "description": "Backend for the HTWG App",
   "scripts": {
     "lint": "phpstan analyse -c phpstan.neon"
