@@ -2,11 +2,14 @@
 /**
  * Fetch an HTML from URL and return an DOMXPath Object of it.
  * @param string $url
- * @return DOMXPath
+ * @return DOMXPath|false
  */
-function fetch_and_create_dom(string $url): DOMXPath
+function fetch_and_create_dom(string $url): DOMXPath|false
 {
     $html = file_get_contents($url);
+    if ($html === false) {
+        return false;
+    }
     return create_domxpath($html);
 }
 
@@ -91,7 +94,7 @@ function create_cookie(mixed $cookie): string
  * @param callable $func
  * @param array<mixed>|null $params
  */
-function send(callable $func, array|null $params = null): void
+function send_back(callable $func, array|null $params = null): void
 {
     try {
         if (isset($params)) {
@@ -112,4 +115,42 @@ function send(callable $func, array|null $params = null): void
         http_response_code(500);
         echo 'Error';
     }
+}
+
+/**
+ * Send POST | GET request via curl.
+ * @param string $url
+ * @param string $type
+ * @param string|null $post_fields
+ * @param mixed|null $http_header
+ * @return string|false
+ */
+function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null): string|false
+{
+    $curl = curl_init($url);
+    if ($curl === false) {
+        return false;
+    }
+
+    if ($type === "POST") {
+        curl_setopt($curl, CURLOPT_POST, true);
+
+        /* CURLOPT_POSTFIELDS make only sense when $type is POST */
+        if (isset($post_fields)) {
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $post_fields);
+        }
+    }
+
+    if (isset($http_header)) {
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $http_header);
+    }
+
+    curl_setopt($curl, CURLOPT_HEADER, true); /* Enable Cookies */
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
+
+    $result = curl_exec($curl); /* Send request */
+    if (is_string($result)) {
+        return $result;
+    }
+    return false;
 }
