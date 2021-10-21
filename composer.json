@@ -1,9 +1,15 @@
 {
+  "scripts": {
+    "lint": "phpstan analyse --level=6 *.php"
+  },
   "require": {
     "vlucas/phpdotenv": "^5.3",
     "ext-simplexml": "*",
     "ext-openssl": "*",
     "ext-dom": "*",
     "ext-curl": "*"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^0.12.99"
   }
 }

@@ -1,10 +1,10 @@
 <?php
 /**
  * Fetch an HTML from URL and return an DOMXPath Object of it.
- * @param $url
+ * @param string $url
  * @return DOMXPath
  */
-function fetch_and_create_dom($url): DOMXPath
+function fetch_and_create_dom(string $url): DOMXPath
 {
     $html = file_get_contents($url);
     return create_domxpath($html);
@@ -12,10 +12,10 @@ function fetch_and_create_dom($url): DOMXPath
 
 /**
  * Return an DOMXPath Object from a simple HTML.
- * @param $html
+ * @param string $html
  * @return DOMXPath
  */
-function create_domxpath($html): DOMXPath
+function create_domxpath(string $html): DOMXPath
 {
     $doc = new DOMDocument();
     $doc->loadHTML($html);
@@ -24,21 +24,21 @@ function create_domxpath($html): DOMXPath
 
 /**
  * Escape all html characters.
- * @param $string
+ * @param string $string
  * @return string
  */
-function clean_string($string): string
+function clean_string(string $string): string
 {
     return htmlspecialchars($string, ENT_QUOTES);
 }
 
 /**
  * Create array with Cookies.
- * @param $result
+ * @param string $result
  * @param bool $as_json
- * @return array|false
+ * @return array<string>|string|false
  */
-function get_cookies($result, bool $as_json=false): bool|array
+function get_cookies(string $result, bool $as_json = false): false|array|string
 {
     preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches); /* Retrieve cookies and save them to an array */
     $cookies = [];
@@ -58,10 +58,10 @@ function get_cookies($result, bool $as_json=false): bool|array
 
 /**
  * Return Cookies as String.
- * @param $result
+ * @param string $result
  * @return mixed
  */
-function get_cookies_raw($result): mixed
+function get_cookies_raw(string $result): mixed
 {
     preg_match('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
     return $matches[1];
@@ -69,10 +69,10 @@ function get_cookies_raw($result): mixed
 
 /**
  * Wraps Cookie for request.
- * @param $cookie
+ * @param mixed $cookie
  * @return string
  */
-function create_cookie($cookie): string
+function create_cookie(mixed $cookie): string
 {
     $cookie_as_string = $cookie;
     if (!is_string($cookie)) {
@@ -88,10 +88,10 @@ function create_cookie($cookie): string
 /**
  * Calls func which returns either a string or false.
  * Catches any problems to JSON.
- * @param $func
- * @param null $params
+ * @param callable $func
+ * @param array<mixed>|null $params
  */
-function send($func, $params = null): void
+function send(callable $func, array|null $params = null): void
 {
     try {
         if (isset($params)) {

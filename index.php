@@ -12,10 +12,10 @@ $dotenv->safeLoad();
 /**
  * Decrypts message via the 4096 bit long key.
  *
- * @param $encrypted_message
+ * @param string $encrypted_message
  * @return string | null
  */
-function decrypt_message($encrypted_message): null|string
+function decrypt_message(string $encrypted_message): null|string
 {
     $private_key = $_ENV['PRIV_KEY'];
     openssl_private_decrypt(
@@ -29,12 +29,12 @@ function decrypt_message($encrypted_message): null|string
 
 /**
  * Get information about the Printer Account from HTWG.
- * @param $username
- * @param $password
+ * @param string $username
+ * @param string $password
  * @return string
  * @throws JsonException
  */
-function get_druckerkonto($username, $password): string
+function get_druckerkonto(string $username, string $password): string
 {
     /* Fields for POST request */
     $fields = [
@@ -76,7 +76,7 @@ function get_druckerkonto($username, $password): string
  * Get the newest meals of the HTWG Canteen.
  * @throws JsonException
  */
-function get_speiseplan(): bool|string
+function get_speiseplan(): string
 {
     $speiseplan_xml = file_get_contents('https://www.max-manager.de/daten-extern/seezeit/xml/mensa_htwg/speiseplan.xml');
     $xml = simplexml_load_string($speiseplan_xml);
@@ -106,12 +106,12 @@ function get_speiseplan(): bool|string
 
 /**
  * Get grades from QIS.
- * @param $username
- * @param $password
+ * @param string $username
+ * @param string $password
  * @return string
  * @throws JsonException
  */
-function get_noten($username, $password): string
+function get_noten(string $username, string $password): string
 {
     /* Fields for POST request */
     $fields = [
@@ -214,11 +214,11 @@ function get_noten($username, $password): string
 
 /**
  * Get timetable from LSF.
- * @param $username
- * @param $password
+ * @param string $username
+ * @param string $password
  * @return string
  */
-function get_stundenplan($username, $password): string
+function get_stundenplan(string $username, string $password): string
 {
     /* Fields for POST request */
     $fields = [
@@ -283,11 +283,11 @@ function get_veranstaltungen(): string
 
 /**
  * Get prices and opening times of Café Endlicht.
- * @param $param
- * @return string|bool
+ * @param string $param
+ * @return string|false
  * @throws JsonException
  */
-function get_endlicht($param): string|bool
+function get_endlicht(string $param): string|false
 {
     $xpath = fetch_and_create_dom('https://www.htwg-konstanz.de/%20/hochschule/einrichtungen/asta/cafe-endlicht/');
     if ($param === 'zeiten') {
