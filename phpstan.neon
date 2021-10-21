@@ -1,8 +1,7 @@
 parameters:
   level: 8
   paths:
-    - .
-    - src
+    - %rootDir%
   fileExtensions:
     - php
   excludePaths:
