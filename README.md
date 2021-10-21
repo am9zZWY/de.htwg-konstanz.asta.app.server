@@ -2,7 +2,15 @@
 
 The [HTWG App](https://github.com/htwg-app/htwg-app-front) connects to this backend which is deployed on `Heroku`.
 
-## 1. Running
+## 1. Installation
+
+Install all packages specified in `composer.json`:
+
+```shell
+composer install
+```
+
+## 2. Running
 
 You can start the server via the console.
 
@@ -12,11 +20,13 @@ E.g.:
 php -S 127.0.0.1:8000
 ```
 
-## 2. REST API
+## 3. Development
 
-Following requests are possible
+### 3.1 REST API
 
-### 2.1 GET
+Following requests are possible.
+
+#### 3.1.1 GET
 
 ```text
 GET /?mensa
@@ -26,7 +36,7 @@ GET /?endlicht&reqtype=preise
 GET /?endlicht&reqtype=zeiten
 ```
 
-### 2.2 POST
+#### 3.1.2 POST
 
 ```text
 POST BODY {
@@ -54,3 +64,12 @@ foobar
 -----END RSA PRIVATE KEY-----"
 ```
 
+### 3.2 Linting with PHPStan
+
+To lint all files in the project run the following command in the console:
+
+```shell
+composer run lint
+```
+
+This project is linted with `PHPStan`. The config file `phpstan.neon` is passed as parameter to the linting command.
