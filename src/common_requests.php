@@ -88,7 +88,7 @@ function get_endlicht(string $param): string|false
             return false;
         }
 
-        return $endlicht_zeiten[0]->ownerDocument->saveHTML($endlicht_zeiten);
+        return $endlicht_zeiten[0]->ownerDocument->saveHTML($endlicht_zeiten[0]);
     }
 
     if ($param === 'preise') {
