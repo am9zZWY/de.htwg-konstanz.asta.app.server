@@ -10,23 +10,24 @@ Install all packages specified in `composer.json`:
 composer install
 ```
 
-## 2. Running
 
-You can start the server via the console.
+## 2. Development
 
-E.g.:
+### 2.1 Start Server
+
+To start developing the backend you must start a server. It can be started with the following command:
 
 ```shell
-php -S 127.0.0.1:8000
+composer dev
 ```
 
-## 3. Development
+This will start a server at `localhost:8000`.
 
-### 3.1 REST API
+### 2.2 REST API
 
 Following requests are possible.
 
-#### 3.1.1 GET
+#### 2.2.1 GET
 
 ```text
 GET /?mensa
@@ -36,7 +37,7 @@ GET /?endlicht&reqtype=preise
 GET /?endlicht&reqtype=zeiten
 ```
 
-#### 3.1.2 POST
+#### 2.2.2 POST
 
 ```text
 POST BODY {
@@ -64,7 +65,7 @@ foobar
 -----END RSA PRIVATE KEY-----"
 ```
 
-### 3.2 Linting with PHPStan
+### 2.3 Linting with PHPStan
 
 To lint all files in the project run the following command in the console:
 

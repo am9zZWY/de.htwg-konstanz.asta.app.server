@@ -3,6 +3,7 @@
   "description": "Backend for the HTWG App",
   "license": "MIT",
   "scripts": {
+    "dev": "php -S 127.0.0.1:8000",
     "lint": "phpstan analyse -c phpstan.neon"
   },
   "require": {
