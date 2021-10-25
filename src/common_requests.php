@@ -61,7 +61,7 @@ function get_termine(): string|false
         return false;
     }
 
-    return $termine[0]->parentNode->ownerDocument->saveHTML($termine);
+    return $termine[0]->parentNode->ownerDocument->saveHTML($termine[0]->parentNode);
 }
 
 function get_veranstaltungen(): string
