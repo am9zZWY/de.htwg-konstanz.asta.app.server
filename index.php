@@ -76,5 +76,5 @@ if (isset($json)) {
     send_back('get_endlicht', [clean_string($_GET['reqtype'])]);
 } else {
     http_response_code(400);
-    echo 'Bad Request';
+    echo 'Computer sagt nein.';
 }
