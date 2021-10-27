@@ -147,8 +147,19 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
 
     curl_setopt($curl, CURLOPT_HEADER, true); /* Enable Cookies */
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
+    curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 0);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 10); /* Set timeout for execution */
 
     $result = curl_exec($curl); /* Send request */
+
+    $curl_errno = curl_errno($curl); /* Get errno */
+
+    curl_close($curl); /* Close connection */
+
+    if ($curl_errno > 0) {
+        return false;
+    }
+
     if (is_string($result)) {
         return $result;
     }
