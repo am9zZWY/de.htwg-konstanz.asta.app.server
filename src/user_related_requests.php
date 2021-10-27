@@ -146,9 +146,60 @@ function get_noten(string $username, string $password): string|false
  * Get grades from QIS.
  * @param string $username
  * @param string $password
- * @return string
+ * @return string|false
  */
-function get_stundenplan(string $username, string $password): string
+function get_stundenplan(string $username, string $password): string|false
 {
-    return '';
+    /* Fields for POST request */
+    $fields = [
+        'username' => $username,
+        'password' => $password,
+        'submit' => 'Anmeldung'
+    ];
+
+    $header_login = array(
+        'Content-Type: application/x-www-form-urlencoded',
+        'Host: lsf.htwg-konstanz.de'
+    );
+
+    /**
+     * Initial POST request to prepare for log in.
+     * The server then sends back identification cookies which should be used to get the page.
+     */
+    $result_post_prepare = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=user&type=1&category=auth.login&startpage=portal.vm&breadCrumbSource=portal', type: "POST", post_fields: http_build_query($fields), http_header: $header_login);
+    if ($result_post_prepare === false) {
+        return false;
+    }
+    $cookies = get_cookies_raw($result_post_prepare); /* Need raw cookies */
+
+    $header_stundenplan = array(
+        'Host: lsf.htwg-konstanz.de',
+        'Connection: keep-alive',
+        create_cookie($cookies)
+    );
+
+
+    /* Login. */
+    send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=user&type=0&category=menu.browse&breadCrumbSource=portal&startpage=portal.vm&chco=y', type: "GET", http_header: $header_stundenplan);
+
+    /* Prüfungsverwaltung. */
+    $result_stundenplan = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&act=show&show=plan&P.subc=plan&navigationPosition=functions%2CscheduleLoggedin&breadcrumb=schedule&topitem=functions&subitem=scheduleLoggedin', type: "GET", http_header: $header_stundenplan);
+    if ($result_stundenplan === false) {
+        return false;
+    }
+
+    /* Parse Stundenplan */
+    $xpath = create_domxpath($result_stundenplan);
+    $link_to_ical = $xpath->query('.//a[@class="tree"]/@href');
+    if ($link_to_ical === false) {
+        return false;
+    }
+
+    $ical = send_with_curl($link_to_ical[0]->nodeValue, type: "GET", http_header: $header_stundenplan);
+    if ($ical !== false) {
+        header('Content-type: text/calendar; charset=utf-8');
+        return $ical;
+    }
+
+    return false;
 }
