@@ -1,8 +1,8 @@
 parameters:
   level: 8
   paths:
-    - %rootDir%
-  fileExtensions:
-    - php
+    - .
+  bootstrapFiles:
+    - index.php
   excludePaths:
     - vendor
