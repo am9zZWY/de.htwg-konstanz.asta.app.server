@@ -7,6 +7,9 @@ require_once __DIR__ . '/src/user_related_requests.php';
 
 /* CONSTANTS */
 const CONTENT_JSON = 'Content-type:application/json;charset=utf-8';
+const CONTENT_TEXT = 'Content-type:text/plain;charset=UTF-8';
+const CONTENT_HTML = 'Content-type:text/html;charset=UTF-8';
+const CONTENT_ICAL = 'Content-type:text/calendar;charset=utf-8';
 
 
 /* Used to load private key from .env file */
