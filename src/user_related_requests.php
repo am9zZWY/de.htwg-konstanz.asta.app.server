@@ -6,7 +6,7 @@ require_once 'helpers.php';
  * Get information about the Printer Account from HTWG.
  * @param string $username
  * @param string $password
- * @return string
+ * @return string|false
  */
 function get_druckerkonto(string $username, string $password): string|false
 {
@@ -42,8 +42,12 @@ function get_druckerkonto(string $username, string $password): string|false
 
     /* Get first digits */
     $matches = array();
-    preg_match('(\d+,\d+)', $result_druckerkonto, $matches);
+    $result_match = preg_match('(\d+,\d+)', $result_druckerkonto, $matches);
+    if ($result_match === false || !isset($matches[0])) {
+        return false;
+    }
 
+    header(CONTENT_TEXT);
     return $matches[0];
 }
 
@@ -96,7 +100,7 @@ function get_noten(string $username, string $password): string|false
     /* Path for Notenspiegel über alle bestandenen Prüfungsleistungen. */
     $xpath = create_domxpath($result_get_pruefungsverwaltung);
     $notenspiegel_path = $xpath->query('.//a[contains(text(), "Notenspiegel über alle bestandenen Leistungen")]/@href');
-    if ($notenspiegel_path === false) {
+    if ($notenspiegel_path === false || !isset($notenspiegel_path[0])) {
         return false;
     }
 
@@ -197,7 +201,7 @@ function get_stundenplan(string $username, string $password): string|false
 
     $ical = send_with_curl($link_to_ical[0]->nodeValue, type: "GET", http_header: $header_stundenplan);
     if ($ical !== false) {
-        header('Content-type: text/calendar; charset=utf-8');
+        header(CONTENT_ICAL);
         return $ical;
     }
 
