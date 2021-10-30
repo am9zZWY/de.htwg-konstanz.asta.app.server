@@ -61,6 +61,7 @@ function get_termine(): string|false
         return false;
     }
 
+    header(CONTENT_HTML);
     return $termine[0]->parentNode->ownerDocument->saveHTML($termine[0]->parentNode);
 }
 
@@ -88,6 +89,7 @@ function get_endlicht(string $param): string|false
             return false;
         }
 
+        header(CONTENT_HTML);
         return $endlicht_zeiten[0]->ownerDocument->saveHTML($endlicht_zeiten[0]);
     }
 
@@ -105,7 +107,7 @@ function get_endlicht(string $param): string|false
             $item->price = trim($parsed_string[1]);
             $preise[] = $item;
         }
-        header('Content-type:application/json;charset=utf-8');
+        header(CONTENT_JSON);
         return json_encode($preise, JSON_THROW_ON_ERROR);
     }
 
