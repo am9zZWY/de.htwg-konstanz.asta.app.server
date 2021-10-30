@@ -108,8 +108,8 @@ function send_back(callable $func, array|null $params = null): void
             http_response_code(200);
             echo $ret;
         } else {
-            http_response_code(404);
-            echo 'Not found';
+            http_response_code(403);
+            echo 'Falscher Benutzername oder Passwort.';
         }
     } catch (JsonException) {
         http_response_code(500);
