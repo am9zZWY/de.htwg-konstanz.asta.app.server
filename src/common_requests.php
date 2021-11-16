@@ -25,7 +25,8 @@ function get_speiseplan(): string|false
         if ($_timestamp === null) {
             continue;
         }
-        $timestamp = $_timestamp->timestamp;
+
+        $timestamp = date('d.m.Y', (int)$_timestamp->timestamp);
 
         $items = $tag->item;
         $cleaned_items = [];
