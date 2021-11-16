@@ -125,7 +125,7 @@ function send_back(callable $func, array|null $params = null): void
  * @param mixed|null $http_header
  * @return string|false
  */
-function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null): string|false
+function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null, bool $header = true): string|false
 {
     $curl = curl_init($url);
     if ($curl === false) {
@@ -145,7 +145,9 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
         curl_setopt($curl, CURLOPT_HTTPHEADER, $http_header);
     }
 
-    curl_setopt($curl, CURLOPT_HEADER, true); /* Enable Cookies */
+    if ($header) {
+        curl_setopt($curl, CURLOPT_HEADER, true); /* Enable Cookies */
+    }
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
     curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 0);
     curl_setopt($curl, CURLOPT_TIMEOUT, 10); /* Set timeout for execution */
