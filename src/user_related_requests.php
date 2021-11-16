@@ -199,7 +199,8 @@ function get_stundenplan(string $username, string $password): string|false
         return false;
     }
 
-    $ical = send_with_curl($link_to_ical[0]->nodeValue, type: "GET", http_header: $header_stundenplan);
+    /* Disable unwanted header with header: false */
+    $ical = send_with_curl($link_to_ical[0]->nodeValue, type: "GET", http_header: $header_stundenplan, header: false);
     if ($ical !== false) {
         header(CONTENT_ICAL);
         return $ical;
