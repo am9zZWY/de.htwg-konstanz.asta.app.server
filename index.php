@@ -74,7 +74,7 @@ if (isset($json)) {
 } else if (isset($_GET['termine'])) {
     send_back('get_termine');
 } else if (isset($_GET['veranstaltungen'])) {
-    send_back('get_veranstaltungen');
+    send_back('get_veranstaltungs_kalender');
 } else if (isset($_GET['endlicht'], $_GET['reqtype']) && ($_GET['reqtype'] === 'preise' || $_GET['reqtype'] === 'zeiten')) {
     send_back('get_endlicht', [clean_string($_GET['reqtype'])]);
 } else {
