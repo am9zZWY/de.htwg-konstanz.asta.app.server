@@ -123,6 +123,7 @@ function send_back(callable $func, array|null $params = null): void
  * @param string $type
  * @param string|null $post_fields
  * @param mixed|null $http_header
+ * @param bool $header
  * @return string|false
  */
 function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null, bool $header = true): string|false
