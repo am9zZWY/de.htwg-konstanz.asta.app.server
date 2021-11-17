@@ -36,6 +36,7 @@ function get_speiseplan(): string|false
             $food->title = (string)$item->title;
             $food->price = [(string)$item->preis1, (string)$item->preis2, (string)$item->preis3, (string)$item->preis4];
             $cleaned_items[] = $food;
+            $food->kind = (string)$item->icons;
         }
         $day->items = $cleaned_items;
 
