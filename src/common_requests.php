@@ -67,11 +67,6 @@ function get_termine(): string|false
     return $termine[0]->parentNode->ownerDocument->saveHTML($termine[0]->parentNode);
 }
 
-function get_veranstaltungen(): string
-{
-    return '';
-}
-
 /**
  * Get prices and opening times of Café Endlicht.
  * @param string $param
@@ -114,4 +109,42 @@ function get_endlicht(string $param): string|false
     }
 
     return false;
+}
+
+/**
+ * Get Veranstaltungen of Kalender
+ * @return string|false
+ * @throws JsonException
+ */
+function get_veranstaltungs_kalender()
+{
+    $xpath = fetch_and_create_dom('https://www.htwg-konstanz.de/index.php?q=*&type=500&pidOnly=83');
+    if ($xpath === false) {
+        return false;
+    }
+
+    $termine = $xpath->query('.//li[@class="wrapper"]');
+    if ($termine === false) {
+        return false;
+    }
+
+    $termine_list = [];
+    foreach ($termine as $termin) {
+        $termin_as_json = new stdClass();
+        $year = $termin->getAttribute('data-year');
+        $day = $xpath->query('.//*[@class="day"]', $termin)[0]->nodeValue;
+        $month = $xpath->query('.//*[@class="month"]', $termin)[0]->nodeValue;
+        $termin_as_json->date = $day . '. ' . $month . ' ' . $year;
+
+        $termin_as_json->date_as_text = $xpath->query('.//*[@class="date"]', $termin)[0]->nodeValue;
+        $termin_as_json->location = $xpath->query('.//*[@class="location"]', $termin)[0]->nodeValue;
+
+        $content = $xpath->query('.//*[@class="content"]', $termin)[0];
+        $termin_as_json->content = $content->ownerDocument->saveHTML($content);
+
+        $termine_list[] = $termin_as_json;
+    }
+
+    header(CONTENT_JSON);
+    return json_encode($termine_list, JSON_THROW_ON_ERROR);
 }
