@@ -11,7 +11,8 @@
     "ext-simplexml": "*",
     "ext-openssl": "*",
     "ext-dom": "*",
-    "ext-curl": "*"
+    "ext-curl": "*",
+    "ext-libxml": "*"
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",

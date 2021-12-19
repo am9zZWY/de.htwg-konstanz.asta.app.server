@@ -11,10 +11,12 @@ const CONTENT_TEXT = 'Content-type:text/plain;charset=UTF-8';
 const CONTENT_HTML = 'Content-type:text/html;charset=UTF-8';
 const CONTENT_ICAL = 'Content-type:text/calendar;charset=utf-8';
 
-
 /* Used to load private key from .env file */
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
+
+/* Disable warnings from DOMDocument */
+libxml_use_internal_errors(true);
 
 /**
  * Decrypts message via the 4096 bit long key.
