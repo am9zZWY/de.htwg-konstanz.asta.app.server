@@ -4,6 +4,8 @@ The [HTWG App](https://github.com/htwg-app/htwg-app-front) connects to this back
 
 ## 1. Installation
 
+First, make sure `php` and `composer` are installed.
+
 Install all packages specified in `composer.json`:
 
 ```shell
