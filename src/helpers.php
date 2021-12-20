@@ -27,12 +27,23 @@ function create_domxpath(string $html): DOMXPath
 
 /**
  * Escape all html characters.
- * @param string $string
+ * @param string|null $string $string
  * @return string
  */
-function clean_string(string $string): string
+function clean_string(string|null $string): string
 {
+    if ($string == null) {
+        return '';
+    }
     return htmlspecialchars($string, ENT_QUOTES);
+}
+
+function get_value(string $key): string
+{
+    if ($key != null && isset($_GET[$key])) {
+        return clean_string($_GET[$key]);
+    }
+    return '';
 }
 
 /**
