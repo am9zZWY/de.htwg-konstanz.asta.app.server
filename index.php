@@ -63,7 +63,7 @@ if (isset($json)) {
             } elseif (clean_string($json['reqtype']) === 'noten') {
                 send_back('get_noten', [$username, $password]);
             } elseif (clean_string($json['reqtype']) === 'stundenplan') {
-                send_back('get_stundenplan', [$username, $password]);
+                send_back('get_stundenplan', [$username, $password, get_value('week'), get_value('year'), get_value('type')]);
             }
         } else {
             http_response_code(403);
@@ -77,8 +77,8 @@ if (isset($json)) {
     send_back('get_termine');
 } else if (isset($_GET['veranstaltungen'])) {
     send_back('get_veranstaltungs_kalender');
-} else if (isset($_GET['endlicht'], $_GET['reqtype']) && ($_GET['reqtype'] === 'preise' || $_GET['reqtype'] === 'zeiten')) {
-    send_back('get_endlicht', [clean_string($_GET['reqtype'])]);
+} else if (isset($_GET['endlicht'], $_GET['reqtype']) && (get_value('reqtype') === 'preise' || get_value('reqtype')=== 'zeiten')) {
+    send_back('get_endlicht', [get_value('reqtype')]);
 } else {
     http_response_code(400);
     echo 'Computer sagt nein.';
