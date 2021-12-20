@@ -147,12 +147,15 @@ function get_noten(string $username, string $password): string|false
 }
 
 /**
- * Get grades from QIS.
+ * Get timetable from LSF.
  * @param string $username
  * @param string $password
+ * @param string $week
+ * @param string $year
+ * @param string $type
  * @return string|false
  */
-function get_stundenplan(string $username, string $password): string|false
+function get_stundenplan(string $username, string $password, string $week, string $year = 'all', string $type = 'table'): string|false
 {
     /* Fields for POST request */
     $fields = [
@@ -182,29 +185,25 @@ function get_stundenplan(string $username, string $password): string|false
         create_cookie($cookies)
     );
 
-
     /* Login. */
     send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=user&type=0&category=menu.browse&breadCrumbSource=portal&startpage=portal.vm&chco=y', type: "GET", http_header: $header_stundenplan);
 
-    /* Prüfungsverwaltung. */
-    $result_stundenplan = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&act=show&show=plan&P.subc=plan&navigationPosition=functions%2CscheduleLoggedin&breadcrumb=schedule&topitem=functions&subitem=scheduleLoggedin', type: "GET", http_header: $header_stundenplan);
-    if ($result_stundenplan === false) {
-        return false;
+
+    /* year = all */
+    $timetable = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&week=-1&act=show&pool=&show=plan&P.vx=kurz&P.Print=', type: "GET", http_header: $header_stundenplan, header: false);
+
+    if ($year != null && $year !== 'all' && $week != null) {
+        /* Get timetable by week and year */
+        $timetable = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&week=' . $week . '_' . $year . '&act=show&pool=&show=plan&P.vx=kurz&P.Print=', type: "GET", http_header: $header_stundenplan, header: false);
+
+        if ($timetable === false) {
+            return false;
+        }
     }
 
-    /* Parse Stundenplan */
-    $xpath = create_domxpath($result_stundenplan);
-    $link_to_ical = $xpath->query('.//a[@class="tree"]/@href');
-    if ($link_to_ical === false) {
-        return false;
+    if ($type === 'table' || $type === '') {
+        return $timetable;
     }
 
-    /* Disable unwanted header with header: false */
-    $ical = send_with_curl($link_to_ical[0]->nodeValue, type: "GET", http_header: $header_stundenplan, header: false);
-    if ($ical !== false) {
-        header(CONTENT_ICAL);
-        return $ical;
-    }
-
-    return false;
+    return '';
 }
