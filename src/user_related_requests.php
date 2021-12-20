@@ -202,6 +202,7 @@ function get_stundenplan(string $username, string $password, string $week, strin
     }
 
     if ($type === 'table' || $type === '') {
+        header(CONTENT_HTML);
         return $timetable;
     }
 
