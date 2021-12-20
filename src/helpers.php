@@ -168,3 +168,42 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
     }
     return false;
 }
+
+/**
+ * Create cached file.
+ * @param string $filename
+ * @param string $content
+ * @return bool
+ */
+function create_cached_file(string $filename, string $content): bool
+{
+    $dir = $_SERVER['DOCUMENT_ROOT'] . '/cache/';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0755, true);
+    }
+
+    $f = fopen($dir . $filename, 'w');
+    if ($f === false) {
+        return false;
+    }
+    $err = fwrite($f, $content);
+    if ($err === false) {
+        return false;
+    }
+    return fclose($f);
+}
+
+/**
+ * Get a cached file.
+ * @param string $filename
+ * @return string|false
+ */
+function get_cached_file(string $filename): string|false
+{
+    $file = $_SERVER['DOCUMENT_ROOT'] . '/cache/' . $filename;
+    if (!file_exists($file)) {
+        return false;
+    }
+
+    return file_get_contents($file);
+}

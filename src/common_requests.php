@@ -9,6 +9,11 @@ require_once 'helpers.php';
  */
 function get_speiseplan(): string|false
 {
+    $speiseplan_json = get_cached_file('./cache/speiseplan.json');
+    if ($speiseplan_json !== false) {
+        return $speiseplan_json;
+    }
+
     $speiseplan_xml = file_get_contents('https://www.max-manager.de/daten-extern/seezeit/xml/mensa_htwg/speiseplan.xml');
     if ($speiseplan_xml === false) {
         return false;
@@ -43,8 +48,15 @@ function get_speiseplan(): string|false
         $speiseplan->$timestamp = $day;
     }
 
+    $encoded_speiseplan = json_encode($speiseplan, JSON_THROW_ON_ERROR);
+    if ($encoded_speiseplan == false) {
+        return false;
+    }
+
+    create_cached_file('speiseplan.json', $encoded_speiseplan);
+
     header(CONTENT_JSON);
-    return json_encode($speiseplan, JSON_THROW_ON_ERROR);
+    return $encoded_speiseplan;
 }
 
 /**
