@@ -1,10 +1,19 @@
 <?php
 /**
+ * Time in milliseconds since January 1970
+ * @return int
+ */
+function get_time_in_millis(): int
+{
+    return intval(microtime(true)*1000);
+}
+
+/**
  * Fetch an HTML from URL and return an DOMXPath Object of it.
  * @param string $url
  * @return DOMXPath|false
  */
-function fetch_and_create_dom(string $url): DOMXPath|false
+function fetch_and_create_domxpath(string $url): false|DOMXPath
 {
     $html = file_get_contents($url);
     if ($html === false) {
@@ -14,15 +23,68 @@ function fetch_and_create_dom(string $url): DOMXPath|false
 }
 
 /**
- * Return an DOMXPath Object from a simple HTML.
- * @param string $html
- * @return DOMXPath
+ * Fetch an HTML from URL and return an DOMDocument Object of it.
+ * @param string $url
+ * @return DOMDocument|false
  */
-function create_domxpath(string $html): DOMXPath
+function fetch_and_create_dom(string $url): false|DOMDocument
+{
+    $html = file_get_contents($url);
+    if ($html === false) {
+        return false;
+    }
+    return create_dom($html);
+}
+
+/**
+ * Return an DOMDocument from a simple HTML.
+ * @param string $html
+ * @return DOMDocument|false
+ */
+function create_dom(string $html): false|DOMDocument
 {
     $doc = new DOMDocument();
-    $doc->loadHTML($html);
-    return new DOMXPath($doc);
+    $ret = $doc->loadHTML($html);
+    if ($ret === false) {
+        return false;
+    }
+    return $doc;
+}
+
+/**
+ * Return an DOMXPath Object from a simple HTML.
+ * @param string $html
+ * @return DOMXPath|false
+ */
+function create_domxpath(string|false $html): false|DOMXPath
+{
+    if ($html === false) {
+        return false;
+    }
+    $dom = create_dom($html);
+    if ($dom === false) {
+        return false;
+    }
+    return new DOMXPath($dom);
+}
+
+/**
+ * @param DOMXPath $xpath
+ * @param string $query
+ * @return string
+ */
+function get_node(DOMXPath|false $xpath, string $query): string
+{
+    if ($xpath === false) {
+        return '';
+    }
+
+    $result = $xpath->query($query);
+    if ($result === false) {
+        return '';
+    }
+
+    return $result[0]->nodeValue;
 }
 
 /**
@@ -38,6 +100,11 @@ function clean_string(string|null $string): string
     return htmlspecialchars($string, ENT_QUOTES);
 }
 
+/**
+ * Get value from global $_GET variable.
+ * @param string $key
+ * @return string
+ */
 function get_value(string $key): string
 {
     if ($key != null && isset($_GET[$key])) {
@@ -72,21 +139,75 @@ function get_cookies(string $result, bool $as_json = false): false|array|string
 
 /**
  * Return Cookies as String.
- * @param string $result
- * @return mixed
+ * @param string|false $result
+ * @return string
  */
-function get_cookies_raw(string $result): mixed
+function get_cookies_raw(string|false $result): string
 {
-    preg_match('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
-    return $matches[1];
+    if ($result === false) {
+        return '';
+    }
+    preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
+    return implode('; ', $matches[1]);
+}
+
+/**
+ * Creates an array from a key-value-pair which is defined with an equals operator.
+ * @param string $str
+ * @return array<string>
+ */
+function cookie_string_to_array(string $str): array
+{
+    preg_match('/([^=;\s]+)\=([^;\s]+)/mi', $str, $matches);
+    return array_slice($matches, 1, 3);
+}
+
+/**
+ * Add Cookie to Cookiejar.
+ * @param string $cookies
+ * @param string $cookiejar
+ * @return string
+ */
+function add_cookies(string $cookies, string $cookiejar): string
+{
+
+    /* Convert cookiejar from string to object */
+    $local_cookies = explode(';', $cookiejar);
+    $local_cookiejar = new stdClass();
+    foreach ($local_cookies as $local_cookie) {
+        $local_cookie_obj = cookie_string_to_array($local_cookie);
+        $k = $local_cookie_obj[0];
+        $v = $local_cookie_obj[1];
+        $local_cookiejar->{$k} = $v;
+    }
+
+    /* Get new cookies and add them to cookiejar */
+    $local_cookies = explode(';', $cookies);
+    foreach ($local_cookies as $local_cookie) {
+        $local_cookie_obj = cookie_string_to_array($local_cookie);
+        $k = $local_cookie_obj[0];
+        $v = $local_cookie_obj[1];
+        $local_cookiejar->{$k} = $v;
+    }
+
+    /* Convert object back to string */
+    $cookies_as_entries = get_object_vars($local_cookiejar);
+    $cookies_as_string = [];
+    foreach (array_keys($cookies_as_entries) as $cookie_key) {
+        $cookie_as_string = $cookie_key . '=' . $cookies_as_entries[$cookie_key];
+        $cookies_as_string[] = $cookie_as_string;
+    }
+
+    return implode('; ', $cookies_as_string);
 }
 
 /**
  * Wraps Cookie for request.
  * @param mixed $cookie
+ * @param bool $with_cookie_annotation
  * @return string
  */
-function create_cookie(mixed $cookie): string
+function create_cookie(mixed $cookie, bool $with_cookie_annotation = true): string
 {
     $cookie_as_string = $cookie;
     if (!is_string($cookie)) {
@@ -96,7 +217,10 @@ function create_cookie(mixed $cookie): string
             $cookie_as_string = '';
         }
     }
-    return 'Cookie: ' . $cookie_as_string;
+    if ($with_cookie_annotation) {
+        return 'Cookie: ' . $cookie_as_string;
+    }
+    return $cookie_as_string;
 }
 
 /**
@@ -135,9 +259,11 @@ function send_back(callable $func, array|null $params = null): void
  * @param string|null $post_fields
  * @param mixed|null $http_header
  * @param bool $header
+ * @param bool $allow_redirect
+ * @param string|null $encoding
  * @return string|false
  */
-function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null, bool $header = true): string|false
+function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null, bool $header = true, bool $allow_redirect = false, string|null $encoding = null): string|false
 {
     $curl = curl_init($url);
     if ($curl === false) {
@@ -163,6 +289,14 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
     curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 0);
     curl_setopt($curl, CURLOPT_TIMEOUT, 10); /* Set timeout for execution */
+
+    if ($allow_redirect) {
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+    }
+
+    if ($encoding !== null) {
+        curl_setopt($curl, CURLOPT_ENCODING , $encoding);
+    }
 
     $result = curl_exec($curl); /* Send request */
 

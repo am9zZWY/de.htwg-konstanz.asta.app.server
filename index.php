@@ -10,6 +10,9 @@ const CONTENT_JSON = 'Content-type:application/json;charset=utf-8';
 const CONTENT_TEXT = 'Content-type:text/plain;charset=UTF-8';
 const CONTENT_HTML = 'Content-type:text/html;charset=UTF-8';
 const CONTENT_ICAL = 'Content-type:text/calendar;charset=utf-8';
+const CONTENT_PDF = 'Content-Type:application/pdf;charset=utf-8';
+const CONTENT_DOWNLOAD = 'Content-Description:File Transfer';
+
 
 /* Used to load private key from .env file */
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
@@ -62,6 +65,8 @@ if (isset($json)) {
                 send_back('get_druckerkonto', [$username, $password]);
             } elseif (clean_string($json['reqtype']) === 'noten') {
                 send_back('get_noten', [$username, $password]);
+            } elseif (clean_string($json['reqtype']) === 'immatrikulations_bescheinigung') {
+                send_back('get_immatrikulations_bescheinigung', [$username, $password]);
             } elseif (clean_string($json['reqtype']) === 'stundenplan') {
                 send_back('get_stundenplan', [$username, $password, get_value('week'), get_value('year'), get_value('type')]);
             }
@@ -75,8 +80,6 @@ if (isset($json)) {
     send_back('get_speiseplan');
 } else if (isset($_GET['termine'])) {
     send_back('get_termine');
-} else if (isset($_GET['veranstaltungen'])) {
-    send_back('get_veranstaltungs_kalender');
 } else if (isset($_GET['endlicht'], $_GET['reqtype']) && (get_value('reqtype') === 'preise' || get_value('reqtype')=== 'zeiten')) {
     send_back('get_endlicht', [get_value('reqtype')]);
 } else {
