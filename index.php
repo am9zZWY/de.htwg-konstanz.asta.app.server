@@ -53,36 +53,71 @@ try {
     $json = null;
 }
 
+/**
+ * @param string|null $username
+ * @param string|null $password
+ * @param string|null $reqtype
+ * @return void
+ */
+function handle_post(string|null $username, string|null $password, string|null $reqtype)
+{
+    $cleaned_username = clean_string($username);
+    $cleaned_password = clean_string($password);
+    $cleaned_reqtype = clean_string($reqtype);
+    if ($cleaned_username && $cleaned_password) {
+        if ($cleaned_reqtype === 'drucker') {
+            send_back('get_druckerkonto', [$cleaned_username, $cleaned_password]);
+        } elseif ($cleaned_reqtype === 'noten') {
+            send_back('get_noten', [$cleaned_username, $cleaned_password]);
+        } elseif ($cleaned_reqtype === 'immatrikulations_bescheinigung') {
+            send_back('get_immatrikulations_bescheinigung', [$cleaned_username, $cleaned_password]);
+        } elseif ($cleaned_reqtype === 'stundenplan') {
+            send_back('get_stundenplan', [$cleaned_username, $cleaned_password, get_value('week'), get_value('year'), get_value('type')]);
+        }
+    } else {
+        http_response_code(403);
+        echo 'Password oder Benutzername können nicht entschlüsselt werden.';
+    }
+}
+
 /* Handle requests */
 if (isset($json)) {
     /* POST */
     if (isset($json['reqtype'])) {
         $username = decrypt_message($json['username']);
         $password = decrypt_message($json['password']);
-
-        if ($username && $password) {
-            if (clean_string($json['reqtype']) === 'drucker') {
-                send_back('get_druckerkonto', [$username, $password]);
-            } elseif (clean_string($json['reqtype']) === 'noten') {
-                send_back('get_noten', [$username, $password]);
-            } elseif (clean_string($json['reqtype']) === 'immatrikulations_bescheinigung') {
-                send_back('get_immatrikulations_bescheinigung', [$username, $password]);
-            } elseif (clean_string($json['reqtype']) === 'stundenplan') {
-                send_back('get_stundenplan', [$username, $password, get_value('week'), get_value('year'), get_value('type')]);
-            }
-        } else {
-            http_response_code(403);
-            echo 'Password oder Benutzername können nicht entschlüsselt werden.';
-        }
+        handle_post($username, $password, $json['reqtype']);
     }
+} else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    handle_post($_POST['username'], $_POST['password'], $_POST['reqtype']);
     /* GET */
 } else if (isset($_GET['mensa'])) {
     send_back('get_speiseplan');
 } else if (isset($_GET['termine'])) {
     send_back('get_termine');
-} else if (isset($_GET['endlicht'], $_GET['reqtype']) && (get_value('reqtype') === 'preise' || get_value('reqtype')=== 'zeiten')) {
+} else if (isset($_GET['endlicht'], $_GET['reqtype']) && (get_value('reqtype') === 'preise' || get_value('reqtype') === 'zeiten')) {
     send_back('get_endlicht', [get_value('reqtype')]);
 } else {
-    http_response_code(400);
-    echo 'Computer sagt nein.';
+    echo '
+        <html>
+            <body>
+                <h2>HTWG App Backend</h2>
+                <form action="index.php" method="post">
+                    <label for="username">Benutzername</label>
+                    <input id="username" name="username" /><br/>
+                    <label for="password">Passwort</label>
+                    <input id="password" name="password" type="password"/>
+                    <br />
+                    <select name="reqtype">
+                        <option value="drucker" selected>Druckerkonto</option>
+                        <option value="noten">Noten</option>
+                        <option value="immatrikulations_bescheinigung">Immatrikulationsbescheinigung</option>
+                        <option value="stundenplan">Stundenplan</option>
+                    </select>
+                    <br />
+                    <button type="submit">Anfragen</button>
+                </form>
+            </body>
+        </html>
+    ';
 }
