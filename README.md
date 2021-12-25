@@ -12,7 +12,6 @@ Install all packages specified in `composer.json`:
 composer install
 ```
 
-
 ## 2. Development
 
 ### 2.1 Start Server
@@ -34,7 +33,6 @@ Following requests are possible.
 ```text
 GET /?mensa
 GET /?termine
-GET /?veranstaltungen
 GET /?endlicht&reqtype=preise
 GET /?endlicht&reqtype=zeiten
 ```
@@ -54,6 +52,7 @@ Following `reqtype` values are possible
 - `drucker`
 - `noten`
 - `stundenplan`
+- `immatrikulations_bescheinigung`
 
 #### Important Note
 

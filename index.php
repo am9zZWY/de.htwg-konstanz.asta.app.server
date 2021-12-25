@@ -100,13 +100,46 @@ if (isset($json)) {
 } else {
     echo '
         <html>
+            <head>
+                <style>
+                    body {
+                        font: 100%/1.5 "swis721", "Helvetica", "Arial", sans-serif;
+                    }
+                    
+                    * {
+                        margin-top: 10px;
+                    }
+                
+                    input, select, button {
+                        width: 20em;
+                        padding: 12px 20px;
+                        font-size: 1em;
+                    }
+                
+                    input {
+                        border: 0;
+                        outline: none;
+                        background-color: #d9e5ec;
+                        border-radius: 0;
+                    }
+                
+                    button {
+                        display: inline-block;
+                        background: #009b91;
+                        color: white;
+                        line-height: 1;
+                        border: 0;
+                        border-radius: 6px;
+                        text-align: center;
+                        font-weight: bold;
+                    }
+                </style>
+            </head>
             <body>
-                <h2>HTWG App Backend</h2>
+                <h1>HTWG App Backend</h1>
                 <form action="index.php" method="post">
-                    <label for="username">Benutzername</label>
-                    <input id="username" name="username" /><br/>
-                    <label for="password">Passwort</label>
-                    <input id="password" name="password" type="password"/>
+                    <input id="username" name="username" placeholder="Benutzername"/><br/>
+                    <input id="password" name="password" type="password" placeholder="Password"/>
                     <br />
                     <select name="reqtype">
                         <option value="drucker" selected>Druckerkonto</option>

@@ -5,7 +5,7 @@
  */
 function get_time_in_millis(): int
 {
-    return intval(microtime(true)*1000);
+    return intval(microtime(true) * 1000);
 }
 
 /**
@@ -295,7 +295,7 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
     }
 
     if ($encoding !== null) {
-        curl_setopt($curl, CURLOPT_ENCODING , $encoding);
+        curl_setopt($curl, CURLOPT_ENCODING, $encoding);
     }
 
     $result = curl_exec($curl); /* Send request */
