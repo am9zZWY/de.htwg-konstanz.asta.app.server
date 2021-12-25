@@ -68,6 +68,8 @@ foobar
 
 ### 2.3 Linting with PHPStan
 
+[![PHP Composer](https://github.com/HTWG-App/htwg-app-back/actions/workflows/php.yml/badge.svg)](https://github.com/HTWG-App/htwg-app-back/actions/workflows/php.yml)
+
 To lint all files in the project run the following command in the console:
 
 ```shell
