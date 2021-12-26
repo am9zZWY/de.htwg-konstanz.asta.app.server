@@ -6,9 +6,9 @@ require_once 'helpers.php';
  * Get information about the Printer Account from HTWG.
  * @param string $username
  * @param string $password
- * @return string|false
+ * @return array<mixed>
  */
-function get_druckerkonto(string $username, string $password): string|false
+function get_druckerkonto(string $username, string $password): array
 {
     /* Fields for POST request */
     $fields = [
@@ -22,43 +22,41 @@ function get_druckerkonto(string $username, string $password): string|false
      * The server then sends back identification cookies which should be used to get the page.
      */
     $result_login = send_with_curl('https://login.rz.htwg-konstanz.de/index.spy', type: "POST", post_fields: http_build_query($fields));
-    if ($result_login === false) {
-        return false;
+    if (code_is_error($result_login[0])) {
+        return $result_login;
     }
 
-    $cookies = get_cookies($result_login);
-    if ($cookies === false) {
-        return false;
-    }
+    $cookies = get_cookies($result_login[1]);
+
 
     /**
      * Get prepared page from server.
      * Cookies are needed to authenticate.
      */
     $result_druckerkonto = send_with_curl('https://login.rz.htwg-konstanz.de/userprintacc.spy?activeMenu=Druckerkonto', type: "GET", http_header: array(create_cookie($cookies)));
-    if ($result_druckerkonto === false) {
-        return false;
+    if (code_is_error($result_druckerkonto[0])) {
+        return $result_druckerkonto;
     }
 
     /* Get first digits */
     $matches = array();
-    $result_match = preg_match('(\d+,\d+)', $result_druckerkonto, $matches);
+    $result_match = preg_match('(\d+,\d+)', $result_druckerkonto[1], $matches);
     if ($result_match === false || !isset($matches[0])) {
-        return false;
+        return array(500);
     }
 
     header(CONTENT_TEXT);
-    return $matches[0];
+    return array(200, $matches[0]);
 }
 
 /**
  * Get grades from QIS.
  * @param string $username
  * @param string $password
- * @return string|false
+ * @return array<mixed>
  * @throws JsonException
  */
-function get_noten(string $username, string $password): string|false
+function get_noten(string $username, string $password): array
 {
     /* Fields for POST request */
     $fields = [
@@ -77,10 +75,10 @@ function get_noten(string $username, string $password): string|false
      * The server then sends back identification cookies which should be used to get the page.
      */
     $result_post_prepare = send_with_curl('https://qisserver.htwg-konstanz.de/qisserver/rds?state=user&type=1&category=auth.login&startpage=portal.vm', type: "POST", post_fields: http_build_query($fields), http_header: $header_login);
-    if ($result_post_prepare === false) {
-        return false;
+    if (code_is_error($result_post_prepare[0])) {
+        return $result_post_prepare;
     }
-    $cookies = get_cookies_raw($result_post_prepare); /* Need raw cookies */
+    $cookies = get_cookies_raw($result_post_prepare[1]); /* Need raw cookies */
 
     $header_noten = array(
         'Host: qisserver.htwg-konstanz.de',
@@ -93,31 +91,31 @@ function get_noten(string $username, string $password): string|false
 
     /* Prüfungsverwaltung. */
     $result_get_pruefungsverwaltung = send_with_curl('https://qisserver.htwg-konstanz.de/qisserver/rds?state=change&type=1&moduleParameter=studyPOSMenu&nextdir=change&next=menu.vm&subdir=applications&xml=menu&purge=y&navigationPosition=functions%2CstudyPOSMenu&breadcrumb=studyPOSMenu&topitem=loggedin&subitem=studyPOSMenu', type: "GET", http_header: $header_noten);
-    if ($result_get_pruefungsverwaltung === false) {
-        return false;
+    if (code_is_error($result_get_pruefungsverwaltung[0])) {
+        return $result_get_pruefungsverwaltung;
     }
 
     /* Path for Notenspiegel über alle bestandenen Prüfungsleistungen. */
-    $xpath = create_domxpath($result_get_pruefungsverwaltung);
+    $xpath = create_domxpath($result_get_pruefungsverwaltung[1]);
     if ($xpath === false) {
-        return false;
+        return array(500);
     }
     $notenspiegel_path = $xpath->query('.//a[contains(text(), "Notenspiegel über alle bestandenen Leistungen")]/@href');
     if ($notenspiegel_path === false || !isset($notenspiegel_path[0])) {
-        return false;
+        return array(500);
     }
 
     /* Notenspiegel über alle bestandenen Prüfungsleistungen. */
     $result_get_notenspiegel = send_with_curl($notenspiegel_path[0]->nodeValue, type: "GET", http_header: $header_noten);
-    if ($result_get_notenspiegel === false) {
-        return false;
+    if (code_is_error($result_get_notenspiegel[0])) {
+        return $result_get_notenspiegel;
     }
 
 
     /* Parse Notenspiegel. */
-    $xpath = create_domxpath($result_get_notenspiegel);
+    $xpath = create_domxpath($result_get_notenspiegel[1]);
     if ($xpath === false) {
-        return false;
+        return array(500);
     }
 
     /* Get all grades */
@@ -147,9 +145,9 @@ function get_noten(string $username, string $password): string|false
         }
 
         header(CONTENT_JSON);
-        return json_encode($grades_obj, JSON_THROW_ON_ERROR);
+        return array(200, json_encode($grades_obj, JSON_THROW_ON_ERROR));
     }
-    return false;
+    return array(500);
 }
 
 /**
@@ -159,9 +157,9 @@ function get_noten(string $username, string $password): string|false
  * @param string $week
  * @param string $year
  * @param string $type
- * @return string|false
+ * @return array<mixed>
  */
-function get_stundenplan(string $username, string $password, string $week, string $year = 'all', string $type = 'table'): string|false
+function get_stundenplan(string $username, string $password, string $week, string $year = 'all', string $type = 'table'): array
 {
     /* Fields for POST request */
     $fields = [
@@ -180,10 +178,10 @@ function get_stundenplan(string $username, string $password, string $week, strin
      * The server then sends back identification cookies which should be used to get the page.
      */
     $result_post_prepare = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=user&type=1&category=auth.login&startpage=portal.vm&breadCrumbSource=portal', type: "POST", post_fields: http_build_query($fields), http_header: $header_login);
-    if ($result_post_prepare === false) {
-        return false;
+    if (code_is_error($result_post_prepare[0])) {
+        return $result_post_prepare;
     }
-    $cookies = get_cookies_raw($result_post_prepare); /* Need raw cookies */
+    $cookies = get_cookies_raw($result_post_prepare[1]); /* Need raw cookies */
 
     $header_stundenplan = array(
         'Host: lsf.htwg-konstanz.de',
@@ -196,14 +194,14 @@ function get_stundenplan(string $username, string $password, string $week, strin
 
 
     /* year = all */
-    $timetable = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&week=-1&act=show&pool=&show=plan&P.vx=kurz&P.Print=', type: "GET", http_header: $header_stundenplan, header: false);
+    $timetable = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&week=500&act=show&pool=&show=plan&P.vx=kurz&P.Print=', type: "GET", http_header: $header_stundenplan, header: false);
 
     if ($year != null && $year !== 'all' && $week != null) {
         /* Get timetable by week and year */
         $timetable = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&week=' . $week . '_' . $year . '&act=show&pool=&show=plan&P.vx=kurz&P.Print=', type: "GET", http_header: $header_stundenplan, header: false);
 
-        if ($timetable === false) {
-            return false;
+        if (code_is_error($timetable[0])) {
+            return $timetable;
         }
     }
 
@@ -212,15 +210,15 @@ function get_stundenplan(string $username, string $password, string $week, strin
         return $timetable;
     }
 
-    return '';
+    return array(500);
 }
 
 /**
  * @param string $username
  * @param string $password
- * @return bool|string
+ * @return array<mixed>
  */
-function get_immatrikulations_bescheinigung(string $username, string $password): bool|string
+function get_immatrikulations_bescheinigung(string $username, string $password): array
 {
     $user_agent = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:95.0) Gecko/20100101 Firefox/95.0';
     $host = 'Host: hisinone.htwg-konstanz.de';
@@ -231,20 +229,19 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
         $user_agent,
         $host,
         $origin,
-        'Connection: keep-alive',
-        'Sec-Fetch-Dest: document',
-        'Sec-Fetch-Mode: navigate',
-        'Sec-Fetch-Site: none',
-        'Sec-Fetch-User: ?1',
+        'Connection: keep-alive'
     );
 
     /* GET: Startpage (not logged in) */
     $result_startpage = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces', type: "GET", http_header: $header, allow_redirect: true);
+    if (code_is_error($result_startpage[0])) {
+        return $result_startpage;
+    }
 
     /* Get new cookies and variables */
-    $cookies = get_cookies_raw($result_startpage);
+    $cookies = get_cookies_raw($result_startpage[1]);
     $cookies = add_cookies('sessionRefresh=0', $cookies);
-    $xpath = create_domxpath($result_startpage);
+    $xpath = create_domxpath($result_startpage[1]);
     $ajax_token = get_node($xpath, './/*[@id="ajaxToken"]/@value');
 
     /******************************************************************************************************************/
@@ -261,38 +258,29 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
     /* Header: Login */
     $cookies = add_cookies('lastRefresh=' . get_time_in_millis(), $cookies);
     $header_login = array(
-        'Content-Type: application/x-www-form-urlencoded',
         $user_agent,
         $host,
         $origin,
-        'Connection: keep-alive',
-        'Sec-Fetch-Dest: document',
-        'Sec-Fetch-Mode: navigate',
-        'Sec-Fetch-Site: same-origin',
-        'Sec-Fetch-User: ?1',
-        'Origin: https://hisinone.htwg-konstanz.de',
-        create_cookie($cookies)
+        create_cookie($cookies),
+        'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+        'Connection: keep-alive'
     );
 
     /* POST: Login 302 */
     $result_login = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/rds?state=user&type=1&category=auth.login', type: "POST", post_fields: http_build_query($login_fields), http_header: $header_login);
-    $result_login_cookies = get_cookies_raw($result_login);
+    if (code_is_error($result_login[0])) {
+        return $result_login;
+    }
+    $result_login_cookies = get_cookies_raw($result_login[1]);
     $cookies = add_cookies($result_login_cookies, $cookies);
 
     /* Header: After Login */
     $header = array(
-        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'DNT: 1',
         $user_agent,
         $host,
         $origin,
-        'Connection: keep-alive',
-        'Sec-Fetch-Dest: document',
-        'Sec-Fetch-Mode: navigate',
-        'Sec-Fetch-Site: same-origin',
-        'Sec-Fetch-User: ?1',
-        'Origin: https://hisinone.htwg-konstanz.de',
-        create_cookie($cookies)
+        create_cookie($cookies),
+        'Connection: keep-alive'
     );
 
     /* GET: Login 302 */
@@ -300,11 +288,14 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
 
     /* GET: Login 200 */
     $result_login_redirect = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces', type: "GET", http_header: $header);
+    if (code_is_error($result_login_redirect[0])) {
+        return $result_login_redirect;
+    }
 
     /* Get new cookies and variables */
-    $result_login_redirect_cookies = get_cookies_raw($result_login_redirect);
+    $result_login_redirect_cookies = get_cookies_raw($result_login_redirect[1]);
     $cookies = add_cookies($result_login_redirect_cookies, $cookies);
-    $xpath = create_domxpath($result_login_redirect);
+    $xpath = create_domxpath($result_login_redirect[1]);
     $authenticity_token = get_node($xpath, './/input[@name="authenticity_token"]/@value');
     $javax_faces_ViewState = get_node($xpath, './/input[@name="javax.faces.ViewState"]/@value');
 
@@ -334,42 +325,32 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
 
     $cookies = add_cookies('lastRefresh=' . get_time_in_millis(), $cookies);
     $header = array(
-        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Content-Type: application/x-www-form-urlencoded',
-        'DNT: 1',
         $user_agent,
         $host,
         $origin,
-        'Connection: keep-alive',
-        'Sec-Fetch-Dest: document',
-        'Sec-Fetch-Mode: navigate',
-        'Sec-Fetch-Site: same-origin',
-        'Sec-Fetch-User: ?1',
-        'Origin: https://hisinone.htwg-konstanz.de',
-        create_cookie($cookies)
+        create_cookie($cookies),
+        'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+        'Connection: keep-alive'
     );
 
     /* POST: Start Page (logged in) */
     $result_startpage = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cs/sys/portal/hisinoneStartPage.faces', type: "POST", post_fields: http_build_query($startpage_fields), http_header: $header);
-    $result_startpage_cookies = get_cookies_raw($result_startpage);
+    if (code_is_error($result_startpage[0])) {
+        return $result_startpage;
+    }
+
+    $result_startpage_cookies = get_cookies_raw($result_startpage[1]);
     $cookies = add_cookies($result_startpage_cookies, $cookies);
 
     /******************************************************************************************************************/
 
     $cookies = add_cookies('lastRefresh=' . get_time_in_millis(), $cookies);
     $header = array(
-        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'DNT: 1',
         $user_agent,
         $host,
         $origin,
-        'Connection: keep-alive',
-        'Sec-Fetch-Dest: document',
-        'Sec-Fetch-Mode: navigate',
-        'Sec-Fetch-Site: same-origin',
-        'Sec-Fetch-User: ?1',
-        'Origin: https://hisinone.htwg-konstanz.de',
-        create_cookie($cookies)
+        create_cookie($cookies),
+        'Connection: keep-alive'
     );
 
     /* GET: Studienservice 302 */
@@ -402,25 +383,18 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
         $user_agent,
         $host,
         $origin,
-        'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language: en-US,en;q=0.5',
-        'Accept-Encoding: gzip',
-        'Content-Type: application/x-www-form-urlencoded',
-        'Origin: https://hisinone.htwg-konstanz.de',
-        'DNT: 1',
-        'Connection: keep-alive',
         create_cookie($cookies),
-        'Upgrade-Insecure-Requests: 1',
-        'Sec-Fetch-Dest: document',
-        'Sec-Fetch-Mode: navigate',
-        'Sec-Fetch-Site: same-origin',
-        'Sec-Fetch-User: ?1',
-        'Sec-GPC: 1',
+        'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+        'Connection: keep-alive'
     );
 
     /* POST: Bescheide/Bescheinigungen 302 */
-    $result_bescheide = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cm/exa/enrollment/info/start.xhtml?_flowId=studyservice-flow&_flowExecutionKey=e1s1', type: "POST", post_fields: http_build_query($studienservice_bescheinigungen_fields), http_header: $header, allow_redirect: true, encoding: "gzip");
-    $xpath = create_domxpath($result_bescheide);
+    $result_bescheide = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cm/exa/enrollment/info/start.xhtml?_flowId=studyservice-flow&_flowExecutionKey=e1s1', type: "POST", post_fields: http_build_query($studienservice_bescheinigungen_fields), http_header: $header, allow_redirect: true);
+    if (code_is_error($result_bescheide[0])) {
+        return $result_bescheide;
+    }
+
+    $xpath = create_domxpath($result_bescheide[1]);
     $javax_faces_ViewState = get_node($xpath, './/input[@name="javax.faces.ViewState"]/@value');
 
     /******************************************************************************************************************/
@@ -448,26 +422,20 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
 
     $cookies = add_cookies('lastRefresh=' . get_time_in_millis(), $cookies);
     $header = array(
-        'Accept: */*',
-        'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
-        'DNT: 1',
         $user_agent,
         $host,
         $origin,
-        'Connection: keep-alive',
-        'Sec-Fetch-Dest: empty',
-        'Sec-Fetch-Mode: cors',
-        'Sec-Fetch-Site: same-origin',
-        'Sec-Fetch-User: ?1',
-        'Sec-GPC: 1',
-        'Faces-Request: partial/ajax',
-        'Origin: https://hisinone.htwg-konstanz.de',
-        'Referer: https://hisinone.htwg-konstanz.de/qisserver/pages/cm/exa/enrollment/info/start.xhtml?_flowId=studyservice-flow&_flowExecutionKey=' . $javax_faces_ViewState,
-        create_cookie($cookies)
+        create_cookie($cookies),
+        'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+        'Connection: keep-alive'
     );
 
     $result_download_page = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cm/exa/enrollment/info/start.xhtml?_flowId=studyservice-flow&_flowExecutionKey=' . $javax_faces_ViewState, type: "POST", post_fields: http_build_query($imm_besch_fields), http_header: $header, allow_redirect: true);
-    $xpath = create_domxpath($result_download_page);
+    if (code_is_error($result_download_page[0])) {
+        return $result_download_page;
+    }
+
+    $xpath = create_domxpath($result_download_page[1]);
     $link_to_download = get_node($xpath, './/a[@class="downloadFile unsichtbar"]/@href');
     $result_download = send_with_curl('https://hisinone.htwg-konstanz.de' . $link_to_download, type: "GET", http_header: $header, header: false, allow_redirect: true);
 

@@ -117,9 +117,9 @@ function get_value(string $key): string
  * Create array with Cookies.
  * @param string $result
  * @param bool $as_json
- * @return array<string>|string|false
+ * @return array<string>|string
  */
-function get_cookies(string $result, bool $as_json = false): false|array|string
+function get_cookies(string $result, bool $as_json = false): array|string
 {
     preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches); /* Retrieve cookies and save them to an array */
     $cookies = [];
@@ -131,7 +131,7 @@ function get_cookies(string $result, bool $as_json = false): false|array|string
         try {
             return json_encode($cookies, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            return false;
+            return '';
         }
     }
     return $cookies;
@@ -239,7 +239,14 @@ function send_back(callable $func, array|null $params = null): void
             $ret = $func();
         }
 
-        if ($ret !== false) {
+        if (is_array($ret)) {
+            http_response_code($ret[0]);
+            if (code_is_error($ret[0])) {
+                echo '';
+            } else {
+                echo $ret[1];
+            }
+        } else if ($ret !== false) {
             http_response_code(200);
             echo $ret;
         } else {
@@ -261,13 +268,13 @@ function send_back(callable $func, array|null $params = null): void
  * @param bool $header
  * @param bool $allow_redirect
  * @param string|null $encoding
- * @return string|false
+ * @return array<mixed>
  */
-function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null, bool $header = true, bool $allow_redirect = false, string|null $encoding = null): string|false
+function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null, bool $header = true, bool $allow_redirect = false, string|null $encoding = null): array
 {
     $curl = curl_init($url);
     if ($curl === false) {
-        return false;
+        return array(-1);
     }
 
     if ($type === "POST") {
@@ -300,18 +307,30 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
 
     $result = curl_exec($curl); /* Send request */
 
+    $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
     $curl_errno = curl_errno($curl); /* Get errno */
 
     curl_close($curl); /* Close connection */
 
     if ($curl_errno > 0) {
-        return false;
+        return array(-1);
     }
 
     if (is_string($result)) {
-        return $result;
+        return array($http_code, $result);
     }
-    return false;
+    return array(-1);
+}
+
+/**
+ * Checks if status code is error or not
+ * @param int $status_code
+ * @return bool
+ */
+function code_is_error(int $status_code): bool
+{
+    return $status_code !== 200 && $status_code !== 301 && $status_code !== 302;
 }
 
 /**
