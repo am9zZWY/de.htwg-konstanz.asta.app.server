@@ -39,9 +39,10 @@ function decrypt_message(string $encrypted_message): null|string
 }
 
 /* Set return-headers to enable CORS policy */
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://htwg-app.github.io");
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Max-Age: 86400');
+header("Strict-Transport-Security: max-age=600; includeSubDomains");
 
 /* Get POST body */
 $post_body = file_get_contents('php://input');
@@ -99,7 +100,7 @@ if (isset($json)) {
     send_back('get_endlicht', [get_value('reqtype')]);
 } else {
     echo '
-        <html>
+        <html lang="de">
             <head>
                 <style>
                     body {
