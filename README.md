@@ -1,6 +1,6 @@
 # HTWG App - Backend
 
-The [HTWG App](https://github.com/htwg-app/htwg-app-front) connects to this backend which is deployed on `Heroku`.
+The [HTWG App](https://github.com/htwg-app/htwg-app-front) for the [HTWG Konstanz](https://www.htwg-konstanz.de) connects to this backend which is deployed on `Heroku`.
 
 ## 1. Installation
 
