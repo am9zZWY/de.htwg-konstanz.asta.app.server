@@ -320,7 +320,7 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
     if (is_string($result)) {
         return array($http_code, $result);
     }
-    return array(-1);
+    return array(500);
 }
 
 /**
