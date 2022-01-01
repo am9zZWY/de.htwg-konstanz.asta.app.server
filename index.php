@@ -38,8 +38,14 @@ function decrypt_message(string $encrypted_message): null|string
     return $decrypted_data;
 }
 
+
 /* Set return-headers to enable CORS policy */
-header("Access-Control-Allow-Origin: https://htwg-app.github.io");
+if ($_SERVER['SERVER_NAME'] === '127.0.0.1') {
+    header("Access-Control-Allow-Origin: *");
+} else {
+    header("Access-Control-Allow-Origin: https://htwg-app.github.io");
+}
+header('Access-Control-Allow-Methods: POST, GET');
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Max-Age: 86400');
 header("Strict-Transport-Security: max-age=600; includeSubDomains");
