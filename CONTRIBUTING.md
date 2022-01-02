@@ -60,4 +60,4 @@ Trage [jpkmiller](https://github.com/jpkmiller) als Reviewer ein.
 ### Fertig
 
 Sobald dein Pull Request eingegangen ist, heißt es abwarten.
-Es kann manchmal sein, dass der Request nicht akzeptiert wird und du gebeten wird Änderungen vorzunehmen. Das kann vorkommen und ist nichts Persönliches, sondern dient lediglich der Sicherstellung der Code-Qualität.
+Es kann manchmal sein, dass der Request nicht akzeptiert wirst und du gebeten wird Änderungen vorzunehmen. Das kann vorkommen und ist nichts Schlimmes, sondern dient lediglich der Sicherstellung der Code-Qualität.
