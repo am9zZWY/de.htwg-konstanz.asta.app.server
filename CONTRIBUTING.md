@@ -55,7 +55,7 @@ Sobald deine Änderungen fertig sind, vergiss nicht ein Review zu schreiben, um 
 ### Pull Request
 
 Wenn du mit deinen Änderungen fertig bist, erstellst du einen Pull Request, auch PR genannt.
-Trage [jpkmiller](github.com/jpkmiller) als Reviewer ein.
+Trage [jpkmiller](https://github.com/jpkmiller) als Reviewer ein.
 
 ### Fertig
 
