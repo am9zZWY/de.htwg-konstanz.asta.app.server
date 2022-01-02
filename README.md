@@ -60,7 +60,7 @@ Folgende `reqtype`-Werte sind möglich
 
 Der private Schlüssel sollte in einer `.env`-Datei im Stammverzeichnis in folgendem Format gespeichert werden:
 
-``dotenv
+```dotenv
 PRIV_KEY="-----BEGIN RSA PRIVATE KEY-----
 foobar
 -----END RSA PRIVATE KEY-----"
