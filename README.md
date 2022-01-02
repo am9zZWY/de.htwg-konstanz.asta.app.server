@@ -30,7 +30,7 @@ Die folgenden Anfragen sind möglich.
 
 #### 2.2.1 GET
 
-````Text
+```Text
 GET /?mensa
 GET /?termine
 GET /?endlicht&reqtype=preise
