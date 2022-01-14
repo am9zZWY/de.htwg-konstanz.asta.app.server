@@ -163,9 +163,9 @@ function get_stundenplan(string $username, string $password, string $week, strin
 {
     /* Fields for POST request */
     $fields = [
-        'username' => $username,
-        'password' => $password,
-        'submit' => 'Anmeldung'
+        'asdf' => $username,
+        'fdsa' => $password,
+        'submit' => 'Anmelden'
     ];
 
     $header_login = array(
@@ -246,7 +246,7 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
 
     /******************************************************************************************************************/
 
-    /* Fields for POST request. For the record: I didn't name these fields like this... */
+    /* Fields for POST request */
     $login_fields = [
         'userInfo' => '',
         'ajax-token' => $ajax_token,
