@@ -399,8 +399,8 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
 
     /******************************************************************************************************************/
 
-    /* POST: Immatrikulationsbescheinigung */
-    $imm_besch_fields = array(
+    /* POST: Immatrikulationsbescheinigung 200 Datum auswählen */
+    $imm_besch_fields_year = array(
         'activePageElementId' => '',
         'refreshButtonClickedId' => '',
         'navigationPosition' => 'hisinoneMeinStudium,hisinoneStudyservice',
@@ -413,9 +413,9 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
         'javax.faces.ViewState' => $javax_faces_ViewState,
         'javax.faces.behavior.event' => 'action',
         'javax.faces.partial.event' => 'click',
-        'javax.faces.source' => 'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtons:0:jobConfigurationButtons:2:job2',
+        'javax.faces.source' => 'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtons:0:jobConfigurationButtons:1:job2',
         'javax.faces.partial.ajax' => 'true',
-        'javax.faces.partial.execute' => 'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtons:0:jobConfigurationButtons:2:job2',
+        'javax.faces.partial.execute' => 'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtons:0:jobConfigurationButtons:1:job2',
         'javax.faces.partial.render' => 'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtonsOverlay studyserviceForm:bescheinigung:reports:reportButtons:jobDownload studyserviceForm:messages-infobox',
         'studyserviceForm' => 'studyserviceForm',
     );
@@ -430,15 +430,60 @@ function get_immatrikulations_bescheinigung(string $username, string $password):
         'Connection: keep-alive'
     );
 
-    $result_download_page = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cm/exa/enrollment/info/start.xhtml?_flowId=studyservice-flow&_flowExecutionKey=' . $javax_faces_ViewState, type: "POST", post_fields: http_build_query($imm_besch_fields), http_header: $header, allow_redirect: true);
+
+    $result_year_selection = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cm/exa/enrollment/info/start.xhtml?_flowId=studyservice-flow&_flowExecutionKey=' . $javax_faces_ViewState, type: "POST", post_fields: http_build_query($imm_besch_fields_year), http_header: $header, allow_redirect: true);
+    if (code_is_error($result_year_selection[0])) {
+        return $result_year_selection;
+    }
+
+    /* Get random numeric value for year */
+    $xpath = create_domxpath($result_year_selection[1]);
+    $year_value = get_node($xpath, './/option[@selected="selected"]/@value');
+
+    /******************************************************************************************************************/
+
+    /* POST: Immatrikulationsbescheinigung 302 Download */
+    $imm_besch_fields_download = array(
+        'activePageElementId' => "studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtonsOverlay:navigationBottom:startJob",
+        'refreshButtonClickedId' => "",
+        'navigationPosition' => "hisinoneMeinStudium,hisinoneStudyservice",
+        'authenticity_token' => $authenticity_token,
+        'autoScroll' => "0,0",
+        'studyserviceForm:fieldsetInforReport:collapsiblePanelCollapsedState' => "false",
+        'studyserviceForm:fieldsetForAktionReports:collapsiblePanelCollapsedState	' => "false",
+        'studyserviceForm:bescheinigung:reports:collapsiblePanelCollapsedState' => 'false',
+        'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtonsOverlay:jobConfiguration:settingsContainer_0:setting_0:setting_focus' => "",
+        'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtonsOverlay:jobConfiguration:settingsContainer_0:setting_0:setting_input' => $year_value,
+        'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtonsOverlay:jobConfiguration:settingsContainer_0:setting_0:setting_filter' => "",
+        'studyserviceForm:bescheinigung:reports:reportButtons:jobConfigurationButtonsOverlay:navigationBottom:startJob' => "PDF+erstellen",
+        'studyserviceForm_SUBMIT' => "1",
+        'javax.faces.ViewState' => $javax_faces_ViewState
+    );
+
+    $cookies = add_cookies('lastRefresh=' . get_time_in_millis(), $cookies);
+    $header = array(
+        $user_agent,
+        $host,
+        $origin,
+        create_cookie($cookies),
+        'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
+        'Connection: keep-alive'
+    );
+
+
+    $result_download_page = send_with_curl('https://hisinone.htwg-konstanz.de/qisserver/pages/cm/exa/enrollment/info/start.xhtml?_flowId=studyservice-flow&_flowExecutionKey=e1s2' , type: "POST", post_fields: http_build_query($imm_besch_fields_download), http_header: $header, header: false, allow_redirect: true);
     if (code_is_error($result_download_page[0])) {
         return $result_download_page;
     }
 
+    /* Get random file hash */
     $xpath = create_domxpath($result_download_page[1]);
     $link_to_download = get_node($xpath, './/a[@class="downloadFile unsichtbar"]/@href');
+
+    /* Download file */
     $result_download = send_with_curl('https://hisinone.htwg-konstanz.de' . $link_to_download, type: "GET", http_header: $header, header: false, allow_redirect: true);
 
+    /* Set PDF and Download headers */
     header(CONTENT_DOWNLOAD);
     header(CONTENT_PDF);
 
