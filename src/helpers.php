@@ -69,22 +69,28 @@ function create_domxpath(string|false $html): false|DOMXPath
 }
 
 /**
- * @param DOMXPath $xpath
+ * @param DOMXPath|false $xpath
  * @param string $query
  * @return string
  */
 function get_node(DOMXPath|false $xpath, string $query): string
 {
-    if ($xpath === false) {
+    if ($xpath === false | $xpath == null) {
         return '';
     }
+
 
     $result = $xpath->query($query);
     if ($result === false) {
         return '';
     }
 
-    return $result[0]->nodeValue;
+    $nodeValue = $result[0]->nodeValue;
+    if ($nodeValue === null) {
+        return '';
+    }
+
+    return $nodeValue;
 }
 
 /**
