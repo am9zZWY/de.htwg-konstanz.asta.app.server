@@ -194,7 +194,7 @@ function get_stundenplan(string $username, string $password, string $week, strin
 
 
     /* year = all */
-    $timetable = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&week=500&act=show&pool=&show=plan&P.vx=kurz&P.Print=', type: "GET", http_header: $header_stundenplan, header: false);
+    $timetable = send_with_curl('https://lsf.htwg-konstanz.de/qisserver/rds?state=wplan&week=-1&act=show&pool=&show=plan&P.vx=kurz&P.Print=', type: "GET", http_header: $header_stundenplan, header: false);
 
     if ($year != null && $year !== 'all' && $week != null) {
         /* Get timetable by week and year */
