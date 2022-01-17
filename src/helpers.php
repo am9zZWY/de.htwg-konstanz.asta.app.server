@@ -75,10 +75,9 @@ function create_domxpath(string|false $html): false|DOMXPath
  */
 function get_node(DOMXPath|false $xpath, string $query): string
 {
-    if ($xpath === false | $xpath == null) {
+    if ($xpath === false) {
         return '';
     }
-
 
     $result = $xpath->query($query);
     if ($result === false) {
