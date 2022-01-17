@@ -31,7 +31,7 @@ function get_speiseplan(): string|false
             continue;
         }
 
-        $timestamp = date('d.m.Y', (int)$_timestamp->timestamp);
+        $timestamp = date('d.m.Y', (int) round(((int)$_timestamp->timestamp) / (86400)) * 86400);
 
         $items = $tag->item;
         $cleaned_items = [];
