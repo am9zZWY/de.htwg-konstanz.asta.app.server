@@ -5,7 +5,7 @@
  */
 function get_time_in_millis(): int
 {
-    return intval(microtime(true) * 1000);
+    return (int)(microtime(true) * 1000);
 }
 
 /**
