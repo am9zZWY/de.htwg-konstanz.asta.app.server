@@ -49,7 +49,7 @@ function get_speiseplan(): string|false
     }
 
     $encoded_speiseplan = json_encode($speiseplan, JSON_THROW_ON_ERROR);
-    if ($encoded_speiseplan === false) {
+    if ($encoded_speiseplan == false) {
         return false;
     }
 
