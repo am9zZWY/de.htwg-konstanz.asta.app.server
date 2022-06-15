@@ -16,6 +16,6 @@
   },
   "require-dev": {
     "roave/security-advisories": "dev-latest",
-    "phpstan/phpstan": "^1.6.9"
+    "phpstan/phpstan": "^1.7.14"
   }
 }
