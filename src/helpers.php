@@ -1,91 +1,101 @@
 <?php
 /**
  * Time in milliseconds since January 1970
+ *
  * @return int
  */
 function get_time_in_millis(): int
 {
-    return (int)(microtime(true) * 1000);
+    return (int)(microtime(TRUE) * 1000);
 }
 
 /**
  * Fetch an HTML from URL and return an DOMXPath Object of it.
+ *
  * @param string $url
+ *
  * @return DOMXPath|false
  */
 function fetch_and_create_domxpath(string $url): false|DOMXPath
 {
     $html = file_get_contents($url);
-    if ($html === false) {
-        return false;
+    if ($html === FALSE) {
+        return FALSE;
     }
     return create_domxpath($html);
 }
 
 /**
  * Fetch an HTML from URL and return an DOMDocument Object of it.
+ *
  * @param string $url
+ *
  * @return DOMDocument|false
  */
 function fetch_and_create_dom(string $url): false|DOMDocument
 {
     $html = file_get_contents($url);
-    if ($html === false) {
-        return false;
+    if ($html === FALSE) {
+        return FALSE;
     }
     return create_dom($html);
 }
 
 /**
  * Return an DOMDocument from a simple HTML.
+ *
  * @param string $html
+ *
  * @return DOMDocument|false
  */
 function create_dom(string $html): false|DOMDocument
 {
     $doc = new DOMDocument();
     $ret = $doc->loadHTML($html);
-    if ($ret === false) {
-        return false;
+    if ($ret === FALSE) {
+        return FALSE;
     }
     return $doc;
 }
 
 /**
  * Return an DOMXPath Object from a simple HTML.
+ *
  * @param string $html
+ *
  * @return DOMXPath|false
  */
 function create_domxpath(string|false $html): false|DOMXPath
 {
-    if ($html === false) {
-        return false;
+    if ($html === FALSE) {
+        return FALSE;
     }
     $dom = create_dom($html);
-    if ($dom === false) {
-        return false;
+    if ($dom === FALSE) {
+        return FALSE;
     }
     return new DOMXPath($dom);
 }
 
 /**
  * @param DOMXPath|false $xpath
- * @param string $query
+ * @param string         $query
+ *
  * @return string
  */
 function get_node(DOMXPath|false $xpath, string $query): string
 {
-    if ($xpath === false) {
+    if ($xpath === FALSE) {
         return '';
     }
 
     $result = $xpath->query($query);
-    if ($result === false) {
+    if ($result === FALSE) {
         return '';
     }
 
     $nodeValue = $result[0]->nodeValue;
-    if ($nodeValue === null) {
+    if ($nodeValue === NULL) {
         return '';
     }
 
@@ -94,12 +104,14 @@ function get_node(DOMXPath|false $xpath, string $query): string
 
 /**
  * Escape all html characters.
+ *
  * @param string|null $string $string
+ *
  * @return string
  */
 function clean_string(string|null $string): string
 {
-    if ($string == null) {
+    if ($string == NULL) {
         return '';
     }
     return htmlspecialchars($string, ENT_QUOTES);
@@ -107,12 +119,14 @@ function clean_string(string|null $string): string
 
 /**
  * Get value from global $_GET variable.
+ *
  * @param string $key
+ *
  * @return string
  */
 function get_value(string $key): string
 {
-    if ($key != null && isset($_GET[$key])) {
+    if ($key != NULL && isset($_GET[$key])) {
         return clean_string($_GET[$key]);
     }
     return '';
@@ -120,11 +134,13 @@ function get_value(string $key): string
 
 /**
  * Create array with Cookies.
+ *
  * @param string $result
- * @param bool $as_json
+ * @param bool   $as_json
+ *
  * @return array<string>|string
  */
-function get_cookies(string $result, bool $as_json = false): array|string
+function get_cookies(string $result, bool $as_json = FALSE): array|string
 {
     preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches); /* Retrieve cookies and save them to an array */
     $cookies = [];
@@ -132,7 +148,7 @@ function get_cookies(string $result, bool $as_json = false): array|string
         parse_str($item, $cookie);
         $cookies = array_merge($cookies, $cookie);
     }
-    if ($as_json === true) {
+    if ($as_json === TRUE) {
         try {
             return json_encode($cookies, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
@@ -144,12 +160,14 @@ function get_cookies(string $result, bool $as_json = false): array|string
 
 /**
  * Return Cookies as String.
+ *
  * @param string|false $result
+ *
  * @return string
  */
 function get_cookies_raw(string|false $result): string
 {
-    if ($result === false) {
+    if ($result === FALSE) {
         return '';
     }
     preg_match_all('/^Set-Cookie:\s*([^;]*)/mi', $result, $matches);
@@ -158,7 +176,9 @@ function get_cookies_raw(string|false $result): string
 
 /**
  * Creates an array from a key-value-pair which is defined with an equals operator.
+ *
  * @param string $str
+ *
  * @return array<string>
  */
 function cookie_string_to_array(string $str): array
@@ -169,8 +189,10 @@ function cookie_string_to_array(string $str): array
 
 /**
  * Add Cookie to Cookiejar.
+ *
  * @param string $cookies
  * @param string $cookiejar
+ *
  * @return string
  */
 function add_cookies(string $cookies, string $cookiejar): string
@@ -208,11 +230,13 @@ function add_cookies(string $cookies, string $cookiejar): string
 
 /**
  * Wraps Cookie for request.
+ *
  * @param mixed $cookie
- * @param bool $with_cookie_annotation
+ * @param bool  $with_cookie_annotation
+ *
  * @return string
  */
-function create_cookie(mixed $cookie, bool $with_cookie_annotation = true): string
+function create_cookie(mixed $cookie, bool $with_cookie_annotation = TRUE): string
 {
     $cookie_as_string = $cookie;
     if (!is_string($cookie)) {
@@ -231,10 +255,11 @@ function create_cookie(mixed $cookie, bool $with_cookie_annotation = true): stri
 /**
  * Calls func which returns either a string or false.
  * Catches any problems to JSON.
- * @param callable $func
+ *
+ * @param callable          $func
  * @param array<mixed>|null $params
  */
-function send_back(callable $func, array|null $params = null): void
+function send_back(callable $func, array|null $params = NULL): void
 {
     try {
         if (isset($params)) {
@@ -251,7 +276,7 @@ function send_back(callable $func, array|null $params = null): void
             } else {
                 echo $ret[1];
             }
-        } else if ($ret !== false) {
+        } elseif ($ret !== FALSE) {
             http_response_code(200);
             echo $ret;
         } else {
@@ -266,24 +291,26 @@ function send_back(callable $func, array|null $params = null): void
 
 /**
  * Send POST | GET request via curl.
- * @param string $url
- * @param string $type
+ *
+ * @param string      $url
+ * @param string      $type
  * @param string|null $post_fields
- * @param mixed|null $http_header
- * @param bool $header
- * @param bool $allow_redirect
+ * @param mixed|null  $http_header
+ * @param bool        $header
+ * @param bool        $allow_redirect
  * @param string|null $encoding
+ *
  * @return array<mixed>
  */
-function send_with_curl(string $url, string $type, string|null $post_fields = null, mixed $http_header = null, bool $header = true, bool $allow_redirect = false, string|null $encoding = null): array
+function send_with_curl(string $url, string $type, string|null $post_fields = NULL, mixed $http_header = NULL, bool $header = TRUE, bool $allow_redirect = FALSE, string|null $encoding = NULL): array
 {
     $curl = curl_init($url);
-    if ($curl === false) {
+    if ($curl === FALSE) {
         return array(-1);
     }
 
     if ($type === "POST") {
-        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POST, TRUE);
 
         /* CURLOPT_POSTFIELDS make only sense when $type is POST */
         if (isset($post_fields)) {
@@ -296,17 +323,17 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
     }
 
     if ($header) {
-        curl_setopt($curl, CURLOPT_HEADER, true); /* Enable Cookies */
+        curl_setopt($curl, CURLOPT_HEADER, TRUE); /* Enable Cookies */
     }
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); /* Don't dump result; only return it */
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE); /* Don't dump result; only return it */
     curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 0);
     curl_setopt($curl, CURLOPT_TIMEOUT, 10); /* Set timeout for execution */
 
     if ($allow_redirect) {
-        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, TRUE);
     }
 
-    if ($encoding !== null) {
+    if ($encoding !== NULL) {
         curl_setopt($curl, CURLOPT_ENCODING, $encoding);
     }
 
@@ -330,7 +357,9 @@ function send_with_curl(string $url, string $type, string|null $post_fields = nu
 
 /**
  * Checks if status code is error or not
+ *
  * @param int $status_code
+ *
  * @return bool
  */
 function code_is_error(int $status_code): bool
@@ -340,38 +369,42 @@ function code_is_error(int $status_code): bool
 
 /**
  * Create cached file.
+ *
  * @param string $filename
  * @param string $content
+ *
  * @return bool
  */
 function create_cached_file(string $filename, string $content): bool
 {
     $dir = $_SERVER['DOCUMENT_ROOT'] . '/cache/';
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        mkdir($dir, 0755, TRUE);
     }
 
     $f = fopen($dir . $filename, 'w');
-    if ($f === false) {
-        return false;
+    if ($f === FALSE) {
+        return FALSE;
     }
     $err = fwrite($f, $content);
-    if ($err === false) {
-        return false;
+    if ($err === FALSE) {
+        return FALSE;
     }
     return fclose($f);
 }
 
 /**
  * Get a cached file.
+ *
  * @param string $filename
+ *
  * @return string|false
  */
 function get_cached_file(string $filename): string|false
 {
     $file = $_SERVER['DOCUMENT_ROOT'] . '/cache/' . $filename;
     if (!file_exists($file)) {
-        return false;
+        return FALSE;
     }
 
     return file_get_contents($file);

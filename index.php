@@ -4,6 +4,7 @@ require __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/helpers.php';
 require_once __DIR__ . '/src/common_requests.php';
 require_once __DIR__ . '/src/user_related_requests.php';
+require_once __DIR__ . '/src/errors.php';
 
 /* CONSTANTS */
 const CONTENT_JSON = 'Content-type:application/json;charset=utf-8';
