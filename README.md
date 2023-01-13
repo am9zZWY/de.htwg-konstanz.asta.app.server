@@ -1,5 +1,7 @@
 # HTWG App - Backend
 
+❗ Veraltet und nicht weiter unterstützt, da die HTWG ständig ihr Backend ändert und ich das in meiner Freizeit gemacht habe und ich nicht mehr an der HTWG studiere. **Wenn jemand interesse hat dieses Projekt aufleben zu lassen, gerne einen PR stellen.**
+
 Die [HTWG App](https://github.com/htwg-app/htwg-app-front) für die [HTWG Konstanz](https://www.htwg-konstanz.de) verbindet sich mit diesem Backend, das auf `Heroku` bereitgestellt wird.
 
 ## 1. Installation
